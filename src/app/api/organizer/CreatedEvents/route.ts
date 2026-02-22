@@ -1,0 +1,1 @@
+// Routes for Fetching All the Events Created by the Organizer (Protected Route for Organizer Portal)
