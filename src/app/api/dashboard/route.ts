@@ -1,0 +1,1 @@
+// Route -> api/dashboard (Get dashboard data for both Users and Organizers)

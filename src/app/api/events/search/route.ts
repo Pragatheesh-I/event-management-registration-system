@@ -1,0 +1,1 @@
+// Route - > /api/events/search (Search for events based on query parameters)

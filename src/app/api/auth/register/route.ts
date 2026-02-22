@@ -1,0 +1,1 @@
+// route -> /api/auth/register (Register for both Users and Organizers)

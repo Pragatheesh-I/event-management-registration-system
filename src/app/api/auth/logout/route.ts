@@ -1,0 +1,1 @@
+// Route -> /api/auth/logout (Logout for both Users and Organizers)

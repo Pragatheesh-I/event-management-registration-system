@@ -1,0 +1,1 @@
+// Routes -> //api/events -> Get List of All Events (Unprotected Route for Public View)

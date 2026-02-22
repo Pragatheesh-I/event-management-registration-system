@@ -1,0 +1,1 @@
+// Route -> /api/events/[id] (Get details of a specific event by ID)
