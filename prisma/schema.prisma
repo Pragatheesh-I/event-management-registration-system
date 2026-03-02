@@ -37,9 +37,8 @@ model User {
   role      Role     @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+  attending Attendance[]
   events        Event[]        @relation("OrganizerEvents")
-  registrations Registration[]
 }
 
 model Event {
@@ -47,27 +46,24 @@ model Event {
   title       String
   description String?
   type        EventType
+  isPrivate   Boolean  @default(false)
   privateCode String?  @unique
   createdBy   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  organizerId String
+  organizer   User     @relation("OrganizerEvents", fields: [organizerId], references: [id])
 
-  organizer   User     @relation("OrganizerEvents", fields: [createdBy], references: [id])
-  registrations Registration[]
+  attendees    Attendance[]
 }
 
-model Registration {
-  id        String   @id @default(uuid())
+model Attendance {
+  id        String           @id @default(uuid())
+  user      User             @relation(fields: [userId], references: [id])
   userId    String
+  event     Event            @relation(fields: [eventId], references: [id])
   eventId   String
-  createdAt DateTime @default(now())
-
-  attendanceStatus AttendanceStatus @default(NOT_MARKED)
-  markedAt   DateTime?
-  markedBy   String?  // organizer id
-  
-  user  User  @relation(fields: [userId], references: [id])
-  event Event @relation(fields: [eventId], references: [id])
+  status    AttendanceStatus @default(NOT_MARKED)
 
   @@unique([userId, eventId])
 }
