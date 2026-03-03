@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   if (!isMatch) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 400 })
   }
-  const token = signToken({
+  const token = await signToken({
     id: user.id,
     role: user.role
   })
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     maxAge: 60 * 60 * 24 * 7
   })
   
-   console.log("cookie from req:", req.headers.get("cookie"))
+   
 
   return response
 }

@@ -14,7 +14,7 @@ export async function GET(req: Request) {
       return NextResponse.json(null)
     }
 
-    const decoded: any = verifyToken(token)
+    const decoded: any = await verifyToken(token)
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },

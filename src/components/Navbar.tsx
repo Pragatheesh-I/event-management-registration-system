@@ -2,11 +2,12 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter,usePathname } from "next/navigation"
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null)
   const router = useRouter()
+  const pathname = usePathname()
 
   // Fetch the logged-in user
   async function fetchUser() {
@@ -32,7 +33,7 @@ export default function Navbar() {
 
   useEffect(() => {
     fetchUser()
-  }, [])
+  }, [pathname])
 
   // Logout
   async function logout() {
