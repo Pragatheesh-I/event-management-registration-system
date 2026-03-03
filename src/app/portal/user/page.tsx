@@ -1,1 +1,1 @@
-// this is Registered Events Page
+// this is Registered Events Page for User

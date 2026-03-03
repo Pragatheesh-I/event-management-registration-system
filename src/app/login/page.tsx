@@ -19,7 +19,9 @@ export default function LoginPage() {
     })
 
     if (res.ok) {
-      router.push("/dashboard/user")
+      router.push("/")
+      router.refresh()
+
     } else {
       setError("Invalid email or password. Please try again.")
       setLoading(false)
