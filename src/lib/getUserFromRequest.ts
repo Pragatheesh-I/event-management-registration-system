@@ -1,8 +1,14 @@
 import { verifyToken } from "./auth"
 
-export function getUserFromRequest(req: any) {
-  const token = req.cookies.get("token")?.value
+export async function getUserFromRequest(req: Request) {
+  const cookieHeader = req.headers.get("cookie") || ""
+
+  const tokenMatch = cookieHeader.match(/token=([^;]+)/)
+  const token = tokenMatch?.[1]
+
   if (!token) throw new Error("Unauthorized")
 
-  return verifyToken(token)
+  const user = await verifyToken(token)
+
+  return user
 }

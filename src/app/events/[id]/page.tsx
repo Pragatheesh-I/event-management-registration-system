@@ -16,12 +16,22 @@ export default function EventDetail() {
   }, [id])
 
   async function register() {
-    await fetch("/api/events/register", {
-      method: "POST",
-      body: JSON.stringify({ eventId: id })
-    })
-    alert("Registered!")
+  const res = await fetch(`/api/events/${id}/register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    }
+  })
+
+  const data = await res.json()
+
+  if (!res.ok) {
+    alert(data.error || "Registration failed")
+    return
   }
+
+  alert("Registered!")
+}
 
   if (!event) return null
 

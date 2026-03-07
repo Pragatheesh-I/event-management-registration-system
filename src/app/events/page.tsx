@@ -5,6 +5,7 @@
   title: string
   location: string
 }
+
 import { useEffect, useState } from "react"
 import EventCard from "@/components/EventCard"
 export default function Events() {
