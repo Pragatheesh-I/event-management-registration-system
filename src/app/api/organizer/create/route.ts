@@ -1,0 +1,1 @@
+// Routes for Organizer cretaing new event (Protected Route for Organizer Portal)

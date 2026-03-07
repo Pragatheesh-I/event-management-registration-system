@@ -1,0 +1,1 @@
+// Routes -> /api/events/[id]/register (Register for a specific event by ID)
