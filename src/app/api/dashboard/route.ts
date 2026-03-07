@@ -1,118 +1,149 @@
+// Route -> api/dashboard (Get dashboard data for both Users and Organizers)
 // app/api/dashboard/route.ts
+// NOTE: In production, replace organizerId query param with your auth session.
+// e.g. import { getServerSession } from "next-auth" and use session.user.id
 
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
 import { AttendanceStatus, EventType } from "@/generated/prisma";
+import { format, subDays } from "date-fns";
 
 export async function GET(req: Request) {
-
-  /* ───────────── SESSION AUTH ───────────── */
-
-  let sessionOrganizerId: string | null = null;
-
-  try {
-    const cookieHeader = req.headers.get("cookie") || "";
-
-    const cookies: Record<string, string> = {};
-    for (const part of cookieHeader.split(";")) {
-      const [key, ...rest] = part.trim().split("=");
-      cookies[key.trim()] = rest.join("=").trim();
-    }
-
-    const token = cookies["token"];
-
-    if (token) {
-      const payload = await verifyToken(token);
-
-      sessionOrganizerId =
-        (payload.id as string) ||
-        (payload.userId as string) ||
-        (payload.sub as string) ||
-        null;
-    }
-
-  } catch (err) {
-    console.warn("[dashboard/GET] JWT verify failed:", err);
-  }
-
-  /* ───────────── QUERY FALLBACK ───────────── */
-
   const { searchParams } = new URL(req.url);
-  const queryId = searchParams.get("organizerId");
+  const organizerId = searchParams.get("organizerId");
 
-  const organizerId = sessionOrganizerId ?? queryId;
-
+  // ── Auth guard ──────────────────────────────────────────────────────
+  // TODO: replace this block with real session auth
   if (!organizerId) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  /* ───────────── FETCH EVENTS ───────────── */
-
   try {
+    // ── Basic counts ──────────────────────────────────────────────────
+    const [
+      totalEvents,
+      publicEvents,
+      privateEvents,
+      totalRegistrations,
+      presentCount,
+      absentCount,
+    ] = await Promise.all([
+      prisma.event.count({ where: { createdBy: organizerId } }),
 
-    const rawEvents = await prisma.event.findMany({
-      where: { organizerId: organizerId },
+      prisma.event.count({
+        where: { createdBy: organizerId, type: EventType.PUBLIC },
+      }),
+
+      prisma.event.count({
+        where: { createdBy: organizerId, type: EventType.PRIVATE },
+      }),
+
+      prisma.registration.count({
+        where: { event: { createdBy: organizerId } },
+      }),
+
+      prisma.registration.count({
+        where: {
+          event: { createdBy: organizerId },
+          attendanceStatus: AttendanceStatus.PRESENT,
+        },
+      }),
+
+      prisma.registration.count({
+        where: {
+          event: { createdBy: organizerId },
+          attendanceStatus: AttendanceStatus.ABSENT,
+        },
+      }),
+    ]);
+
+    const notMarkedCount = totalRegistrations - presentCount - absentCount;
+
+    const attendanceRate =
+      totalRegistrations > 0
+        ? Math.round((presentCount / totalRegistrations) * 10000) / 100
+        : 0;
+
+    // ── Repeat attendees ──────────────────────────────────────────────
+    // Users registered for MORE than 1 event hosted by this organizer
+    const repeatAttendeesRaw = await prisma.registration.groupBy({
+      by: ["userId"],
+      _count: { _all: true },
+      where: { event: { createdBy: organizerId } },
+    });
+    const repeatAttendees = repeatAttendeesRaw.filter(
+      (a) => a._count._all > 1
+    ).length;
+
+    // ── Registrations by day (last 30 days) ──────────────────────────
+    const since = subDays(new Date(), 30);
+    const recentRegistrations = await prisma.registration.findMany({
+      where: {
+        event: { createdBy: organizerId },
+        createdAt: { gte: since },
+      },
+      select: { createdAt: true },
+      orderBy: { createdAt: "asc" },
+    });
+
+    // Aggregate by day
+    const regByDayMap: Record<string, number> = {};
+    recentRegistrations.forEach((r) => {
+      const day = format(r.createdAt, "MMM dd");
+      regByDayMap[day] = (regByDayMap[day] ?? 0) + 1;
+    });
+    // Fill every day in range
+    const registrationsByDay = Array.from({ length: 30 }, (_, i) => {
+      const day = format(subDays(new Date(), 29 - i), "MMM dd");
+      return { date: day, count: regByDayMap[day] ?? 0 };
+    });
+
+    // ── Attendance per event (top 10 events) ─────────────────────────
+    const events = await prisma.event.findMany({
+      where: { createdBy: organizerId },
       select: {
         id: true,
         title: true,
-        type: true,
-        attendees: {
-          select: { status: true },
+        registrations: {
+          select: { attendanceStatus: true },
         },
       },
       orderBy: { createdAt: "desc" },
+      take: 10,
     });
 
-    /* ───────────── DATA TRANSFORMATION ───────────── */
+    const attendanceByEvent = events.map((e) => ({
+      title: e.title.length > 18 ? e.title.slice(0, 17) + "…" : e.title,
+      present: e.registrations.filter(
+        (r) => r.attendanceStatus === AttendanceStatus.PRESENT
+      ).length,
+      absent: e.registrations.filter(
+        (r) => r.attendanceStatus === AttendanceStatus.ABSENT
+      ).length,
+      notMarked: e.registrations.filter(
+        (r) => r.attendanceStatus === AttendanceStatus.NOT_MARKED
+      ).length,
+    }));
 
-    const events = rawEvents.map((event) => {
-
-      const total = event.attendees.length;
-
-      const present = event.attendees.filter(
-        (a) => a.status === AttendanceStatus.PRESENT
-      ).length;
-
-      const absent = event.attendees.filter(
-        (a) => a.status === AttendanceStatus.ABSENT
-      ).length;
-
-      const notMarked = event.attendees.filter(
-        (a) => a.status === AttendanceStatus.NOT_MARKED
-      ).length;
-
-      const type =
-        event.type === EventType.PUBLIC
-          ? "public"
-          : "private";
-
-      return {
-        id: event.id,
-        title: event.title,
-        type: type,
-        total: total,
-        present: present,
-        absent: absent,
-        notMarked: notMarked,
-      };
-
+    // ── Response ──────────────────────────────────────────────────────
+    return NextResponse.json({
+      totalEvents,
+      publicEvents,
+      privateEvents,
+      totalRegistrations,
+      attendanceRate,
+      presentCount,
+      absentCount,
+      notMarkedCount,
+      repeatAttendees,
+      registrationsByDay,
+      attendanceByEvent,
     });
-
-    return NextResponse.json({ events });
-
   } catch (err) {
-
     console.error("[dashboard/GET]", err);
-
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
-
   }
-
 }

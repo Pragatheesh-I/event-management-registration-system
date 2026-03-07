@@ -1,536 +1,380 @@
-// app/(organizer)/dashboard/page.tsx
+// This is Dashboard Page for Organizer
 "use client";
 
 import { useEffect, useState } from "react";
 import {
+  AreaChart, Area,
   BarChart, Bar,
   PieChart, Pie, Cell,
-  ScatterChart, Scatter, ZAxis,
   XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-import { generatePDFReport, generateCSVReport } from "@/lib/generateReport";
+import { generatePDFReport } from "@/lib/generateReport";
 
-type User = {
-  id: string;
-  name: string | null;
-  email: string | null;
-  role: string;
-} | null;
+// ─── Default organizer for testing ───────────────────────────────────────────
+const TEST_ORGANIZER_ID = "7193e61c-4ef9-4df2-a755-9535bf5c6e6e";
 
-const TEST_ORGANIZER_ID = "55e6b4fb-3dd3-4618-a6d3-2ce3f3f115ba";
+// ─── Colors used in charts ────────────────────────────────────────────────────
+const COLORS = {
+  present:   "#22c55e",
+  absent:    "#ef4444",
+  notMarked: "#94a3b8",
+  public:    "#3b82f6",
+  private:   "#a855f7",
+  area:      "#f59e0b",
+};
 
-type EventRow = {
-  id: string;
+// ─── Main Dashboard Component ─────────────────────────────────────────────────
+type AttendanceByEvent = {
   title: string;
-  type: "public" | "private";
-  total: number;
   present: number;
   absent: number;
   notMarked: number;
 };
 
-type FilterType = "all" | "public" | "private";
-
-const C = {
-  pageBg: "#0a0a0a",
-  cardBg: "#141414",
-  border: "#2a2a2a",
-  text: "#f5f5f5",
-  muted: "#6b7280",
-  dim: "#9ca3af",
-  grid: "#1f1f1f",
-  present: "#22c55e",
-  absent: "#ef4444",
-  notMarked: "#94a3b8",
-  amber: "#f59e0b",
-  blue: "#3b82f6",
+type DashboardData = {
+  totalEvents: number;
+  totalRegistrations: number;
+  attendanceRate: number;
+  repeatAttendees: number;
+  publicEvents: number;
+  privateEvents: number;
+  presentCount: number;
+  notMarkedCount: number;
+  absentCount: number;
+  registrationsByDay: { date: string; count: number }[];
+  attendanceByEvent: AttendanceByEvent[];
 };
-
-const cardStyle = {
-  background: C.cardBg,
-  border: "1px solid " + C.border,
-  borderRadius: "14px",
-  padding: "24px",
-};
-
-const labelStyle = {
-  fontSize: "10px",
-  fontWeight: 700,
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.1em",
-  color: C.muted,
-  marginBottom: "18px",
-  display: "block",
-};
-
-const tooltipStyle = {
-  background: C.cardBg,
-  border: "1px solid " + C.border,
-  borderRadius: "8px",
-  color: C.text,
-  fontSize: "12px",
-};
-
-function ScatterTooltip({ active, payload }: any) {
-  if (!active || !payload || payload.length === 0) return null;
-
-  const dot = payload[0].payload;
-
-  return (
-    <div style={{ ...tooltipStyle, padding: "10px 14px" }}>
-      <p style={{ fontWeight: 700, color: C.text, margin: "0 0 4px 0" }}>
-        {dot.title}
-      </p>
-      <p style={{ color: C.dim, margin: 0 }}>Registrations: {dot.x}</p>
-      <p style={{ color: C.present, margin: 0 }}>Attendance: {dot.y}%</p>
-    </div>
-  );
-}
 
 export default function DashboardPage() {
-
-  /* ───────────────── AUTH STATE ───────────────── */
-  const [user, setUser] = useState<User>(null);
-  const [authStatus, setAuthStatus] = useState<
-    "loading" | "authenticated" | "unauthenticated"
-  >("loading");
+  const [data, setData]           = useState<DashboardData | null>(null);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    fetch("/api/me")
+    fetch(`/api/dashboard?organizerId=${TEST_ORGANIZER_ID}`)
       .then((res) => res.json())
-      .then((data) => {
-        if (data?.id) {
-          setUser(data);
-          setAuthStatus("authenticated");
-        } else {
-          setUser(null);
-          setAuthStatus("unauthenticated");
-        }
+      .then((result) => {
+        setData(result);
+        setLoading(false);
       })
-      .catch(() => {
-        setUser(null);
-        setAuthStatus("unauthenticated");
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
       });
   }, []);
 
-  const organizerId =
-    authStatus === "authenticated" && user?.id
-      ? user.id
-      : TEST_ORGANIZER_ID;
-
-  /* ───────────────── DATA STATE ───────────────── */
-  const [allEvents, setAllEvents] = useState<EventRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
-  const [filter, setFilter] = useState<FilterType>("all");
-
-  useEffect(() => {
-    setLoading(true);
-
-    fetch("/api/dashboard?organizerId=" + organizerId)
-      .then((res) => res.json())
-      .then((data) => {
-        setAllEvents(data.events);
-        setLoading(false);
-      });
-  }, [organizerId]);
-
-  /* ───────────────── FILTERED EVENTS ───────────────── */
-  const events =
-    filter === "all"
-      ? allEvents
-      : allEvents.filter((e) => e.type === filter);
-
-  let filterLabel = "All Events";
-  if (filter === "public") filterLabel = "Public Events";
-  if (filter === "private") filterLabel = "Private Events";
-
-  /* ───────────────── KPI CALCULATIONS ───────────────── */
-  const totalEvents = events.length;
-
-  const totalRegistrations = events.reduce((s, e) => s + e.total, 0);
-  const totalPresent = events.reduce((s, e) => s + e.present, 0);
-  const totalAbsent = events.reduce((s, e) => s + e.absent, 0);
-  const totalNotMarked = events.reduce((s, e) => s + e.notMarked, 0);
-
-  let attendanceRate = "N/A";
-  if (totalRegistrations > 0) {
-    attendanceRate =
-      ((totalPresent / totalRegistrations) * 100).toFixed(1) + "%";
+  // ── Download PDF ────────────────────────────────────────────────────────────
+  async function handleDownloadPDF() {
+    setExporting(true);
+    try {
+      if (data) {
+        generatePDFReport(data);
+      }
+    } finally {
+      setExporting(false);
+    }
   }
 
-  /* ───────────────── CHART DATA ───────────────── */
-  const pieData = [
-    { name: "Present", value: totalPresent },
-    { name: "Absent", value: totalAbsent },
-    { name: "Not Marked", value: totalNotMarked },
+  // ── Download CSV ────────────────────────────────────────────────────────────
+  function handleDownloadCSV() {
+    if (!data) return; // Prevent running if data is null
+
+    // Build rows: header + one row per event
+    const rows = [
+      ["Event", "Present", "Absent", "Not Marked", "Total", "Attendance Rate"],
+      ...data.attendanceByEvent.map((e) => {
+        const total = e.present + e.absent + e.notMarked;
+        const rate  = total > 0 ? ((e.present / total) * 100).toFixed(1) + "%" : "N/A";
+        return [e.title, e.present, e.absent, e.notMarked, total, rate];
+      }),
+    ];
+
+    // Join rows into a CSV string
+    const csv  = rows.map((row) => row.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url  = URL.createObjectURL(blob);
+
+    // Create a hidden link and click it to trigger download
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `attendance-report-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  if (loading) return <p style={styles.center}>Loading...</p>;
+  if (error)   return <p style={{ ...styles.center, color: "red" }}>Error: {error}</p>;
+  if (!data)   return null;
+
+  // Data for charts
+  const attendancePie = [
+    { name: "Present",    value: data.presentCount },
+    { name: "Not Marked", value: data.notMarkedCount },
+    { name: "Absent",     value: data.absentCount },
   ];
 
-  const topByRegistrations = [...events]
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 6)
-    .map((e) => ({ title: e.title, total: e.total }));
+  const eventTypePie = [
+    { name: "Public",  value: data.publicEvents },
+    { name: "Private", value: data.privateEvents },
+  ];
 
-  const scatterData = events
-    .filter((e) => e.total > 0)
-    .map((e) => ({
-      title: e.title,
-      x: e.total,
-      y: Math.round((e.present / e.total) * 100),
-      z: e.total,
-    }));
-
-  /* ───────────────── TITLE SHORTENER ───────────────── */
-  function shortenTitle(title: string, max: number) {
-    if (title.length <= max) return title;
-    return title.slice(0, max - 1) + "…";
-  }
-
-  const eventsForChart = events.map((e) => ({
-    ...e,
-    title: shortenTitle(e.title, 10),
-  }));
-
-  const topByRegForChart = topByRegistrations.map((e) => ({
-    ...e,
-    title: shortenTitle(e.title, 20),
-  }));
-
-  /* ───────────────── EXPORT HANDLERS ───────────────── */
-  async function handlePDF() {
-    setExporting(true);
-    generatePDFReport(events, filterLabel);
-    setExporting(false);
-  }
-
-  function handleCSV() {
-    generateCSVReport(events, filterLabel);
-  }
-
-  /* ───────────────── LOADING SCREEN ───────────────── */
-  if (authStatus === "loading" || loading) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          background: C.pageBg,
-          color: C.muted,
-          fontFamily: "monospace",
-          gap: "8px",
-        }}
-      >
-        <p style={{ margin: 0 }}>Loading…</p>
-        <p style={{ margin: 0, fontSize: "11px", opacity: 0.5 }}>
-          {authStatus === "authenticated"
-            ? "Auth: " + user?.email
-            : "Auth: using test ID"}
-        </p>
-      </div>
-    );
-  }
-
-  /* ───────────────── PAGE ───────────────── */
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: C.pageBg,
-        color: C.text,
-        fontFamily: "monospace",
-        padding: "32px",
-      }}
-    >
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+    <div style={styles.page}>
 
-        {/* HEADER */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            marginBottom: "32px",
-            flexWrap: "wrap",
-            gap: "16px",
-          }}
-        >
-          <div>
-            <h1
-              style={{
-                fontSize: "24px",
-                fontWeight: 800,
-                margin: 0,
-                color: C.text,
-              }}
-            >
-              Event Dashboard
-            </h1>
-
-            <p style={{ fontSize: "13px", color: C.muted, margin: "6px 0 0 0" }}>
-              {authStatus === "authenticated"
-                ? "Logged in as " + (user?.name || user?.email)
-                : "Test mode — not logged in"}
-            </p>
-          </div>
-
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <button
-              onClick={handleCSV}
-              style={{
-                padding: "9px 20px",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontFamily: "monospace",
-                fontSize: "13px",
-                fontWeight: 600,
-                background: "transparent",
-                color: C.dim,
-                border: "1px solid " + C.border,
-              }}
-            >
-              ⬇ CSV
-            </button>
-
-            <button
-              onClick={handlePDF}
-              disabled={exporting}
-              style={{
-                padding: "9px 20px",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontFamily: "monospace",
-                fontSize: "13px",
-                fontWeight: 600,
-                background: exporting ? C.muted : C.amber,
-                color: "#0a0a0a",
-                border: "none",
-                opacity: exporting ? 0.6 : 1,
-              }}
-            >
-              {exporting ? "Generating…" : "⬇ PDF Report"}
-            </button>
-          </div>
+      {/* ── Header ── */}
+      <div style={styles.headerRow}>
+        <div>
+          <h1 style={styles.title}>Event Dashboard</h1>
+          <p style={styles.subtitle}>Organizer analytics &amp; insights</p>
         </div>
 
-        {/* FILTER */}
-        <div style={{ marginBottom: "28px" }}>
-          <p style={{ ...labelStyle, marginBottom: "10px" }}>
-            Filter by Event Type
-          </p>
+        {/* ── Export Buttons ── */}
+        <div style={styles.buttonGroup}>
+          <button onClick={handleDownloadCSV} style={styles.btnSecondary}>
+            ⬇ CSV
+          </button>
+          <button
+            onClick={handleDownloadPDF}
+            disabled={exporting}
+            style={exporting ? { ...styles.btnPrimary, opacity: 0.6 } : styles.btnPrimary}
+          >
+            {exporting ? "Generating..." : "⬇ PDF Report"}
+          </button>
+        </div>
+      </div>
 
-          <div style={{ display: "flex", gap: "8px" }}>
-            {(["all", "public", "private"] as FilterType[]).map((option) => (
-              <button
-                key={option}
-                onClick={() => setFilter(option)}
-                style={{
-                  padding: "8px 20px",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontFamily: "monospace",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  background: filter === option ? C.amber : C.cardBg,
-                  color: filter === option ? "#0a0a0a" : C.dim,
-                  border:
-                    filter === option
-                      ? "none"
-                      : "1px solid " + C.border,
-                }}
+      {/* ── KPI Cards ── */}
+      <div style={styles.kpiRow}>
+        <KPICard label="Total Events"        value={data.totalEvents} />
+        <KPICard label="Total Registrations" value={data.totalRegistrations} />
+        <KPICard label="Attendance Rate"     value={data.attendanceRate.toFixed(1) + "%"} />
+        <KPICard label="Repeat Attendees"    value={data.repeatAttendees} />
+        <KPICard label="Public Events"       value={data.publicEvents} />
+        <KPICard label="Private Events"      value={data.privateEvents} />
+      </div>
+
+      {/* ── Row 1: Area chart + Attendance Pie ── */}
+      <div style={styles.row}>
+
+        <div style={{ ...styles.card, flex: 2 }}>
+          <h2 style={styles.cardTitle}>Registrations Over Time (Last 30 Days)</h2>
+          <ResponsiveContainer width="100%" height={240}>
+            <AreaChart data={data.registrationsByDay}>
+              <defs>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor={COLORS.area} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={COLORS.area} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+              <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 11 }} />
+              <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} allowDecimals={false} />
+              <Tooltip contentStyle={styles.tooltip} />
+              <Area
+                type="monotone"
+                dataKey="count"
+                name="Registrations"
+                stroke={COLORS.area}
+                fill="url(#areaGrad)"
+                strokeWidth={2}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div style={{ ...styles.card, flex: 1 }}>
+          <h2 style={styles.cardTitle}>Attendance Breakdown</h2>
+          <ResponsiveContainer width="100%" height={240}>
+            <PieChart>
+              <Pie data={attendancePie} dataKey="value" innerRadius={60} outerRadius={90} paddingAngle={3}>
+                <Cell fill={COLORS.present} />
+                <Cell fill={COLORS.notMarked} />
+                <Cell fill={COLORS.absent} />
+              </Pie>
+              <Tooltip contentStyle={styles.tooltip} />
+              <Legend iconType="circle" iconSize={8} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+      </div>
+
+      {/* ── Row 2: Bar chart + Event Type Pie ── */}
+      <div style={styles.row}>
+
+        <div style={{ ...styles.card, flex: 2 }}>
+          <h2 style={styles.cardTitle}>Attendance by Event</h2>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={data.attendanceByEvent}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+              <XAxis dataKey="title" tick={{ fill: "#94a3b8", fontSize: 11 }} />
+              <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} allowDecimals={false} />
+              <Tooltip contentStyle={styles.tooltip} />
+              <Legend iconType="circle" iconSize={8} />
+              <Bar dataKey="present"   name="Present"    fill={COLORS.present}   radius={[4,4,0,0]} />
+              <Bar dataKey="absent"    name="Absent"     fill={COLORS.absent}    radius={[4,4,0,0]} />
+              <Bar dataKey="notMarked" name="Not Marked" fill={COLORS.notMarked} radius={[4,4,0,0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div style={{ ...styles.card, flex: 1 }}>
+          <h2 style={styles.cardTitle}>Event Types</h2>
+          <ResponsiveContainer width="100%" height={260}>
+            <PieChart>
+              <Pie
+                data={eventTypePie}
+                dataKey="value"
+                outerRadius={90}
+                paddingAngle={4}
+                label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                labelLine={false}
               >
-                {option === "all" && "All Events"}
-                {option === "public" && "🌐 Public"}
-                {option === "private" && "🔒 Private"}
-              </button>
-            ))}
-          </div>
+                <Cell fill={COLORS.public} />
+                <Cell fill={COLORS.private} />
+              </Pie>
+              <Tooltip contentStyle={styles.tooltip} />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* KPI CARDS */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "12px",
-            marginBottom: "16px",
-          }}
-        >
-          {[
-            { label: "Total Events", value: totalEvents, color: C.text },
-            {
-              label: "Registrations",
-              value: totalRegistrations,
-              color: C.text,
-            },
-            {
-              label: "Attendance Rate",
-              value: attendanceRate,
-              color: C.present,
-            },
-            { label: "Present", value: totalPresent, color: C.present },
-            { label: "Absent", value: totalAbsent, color: C.absent },
-            {
-              label: "Not Marked",
-              value: totalNotMarked,
-              color: C.notMarked,
-            },
-          ].map(({ label, value, color }) => (
-            <div key={label} style={cardStyle}>
-              <span style={labelStyle}>{label}</span>
-              <p
-                style={{
-                  fontSize: "36px",
-                  fontWeight: 800,
-                  color: color,
-                  margin: 0,
-                }}
-              >
-                {value}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* CHART ROW 1 */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "2fr 1fr",
-            gap: "12px",
-            marginBottom: "12px",
-          }}
-        >
-
-          <div style={cardStyle}>
-            <span style={labelStyle}>Attendance by Event</span>
-
-            {events.length === 0 ? (
-              <p style={{ color: C.muted, textAlign: "center", padding: "40px 0" }}>
-                No {filter} events found.
-              </p>
-            ) : (
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart
-                  data={eventsForChart}
-                  barCategoryGap="35%"
-                  margin={{ bottom: 60 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
-                  <XAxis
-                    dataKey="title"
-                    interval={0}
-                    tick={{ fill: C.dim, fontSize: 9 }}
-                    height={40}
-                  />
-                  <YAxis tick={{ fill: C.dim, fontSize: 11 }} allowDecimals={false} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend iconType="circle" iconSize={8} />
-                  <Bar dataKey="present" fill={C.present} radius={[4,4,0,0]} />
-                  <Bar dataKey="absent" fill={C.absent} radius={[4,4,0,0]} />
-                  <Bar dataKey="notMarked" fill={C.notMarked} radius={[4,4,0,0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-
-          <div style={cardStyle}>
-            <span style={labelStyle}>Attendance Split</span>
-
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  innerRadius={55}
-                  outerRadius={85}
-                  paddingAngle={3}
-                >
-                  <Cell fill={C.present} />
-                  <Cell fill={C.absent} />
-                  <Cell fill={C.notMarked} />
-                </Pie>
-
-                <Tooltip contentStyle={tooltipStyle} />
-                <Legend iconType="circle" iconSize={8} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-        </div>
-
-        {/* CHART ROW 2 */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-
-          <div style={cardStyle}>
-            <span style={labelStyle}>Top Events by Registrations</span>
-
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart
-                data={topByRegForChart}
-                layout="vertical"
-                barCategoryGap="30%"
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke={C.grid}
-                  horizontal={false}
-                />
-                <XAxis type="number" tick={{ fill: C.dim, fontSize: 11 }} allowDecimals={false} />
-                <YAxis type="category" dataKey="title" tick={{ fill: C.dim, fontSize: 9 }} width={130} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="total" fill={C.blue} radius={[0,6,6,0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div style={cardStyle}>
-            <span style={labelStyle}>Registrations vs Attendance Rate</span>
-
-            {scatterData.length === 0 ? (
-              <p style={{ color: C.muted, textAlign: "center", padding: "40px 0" }}>
-                No data yet.
-              </p>
-            ) : (
-              <ResponsiveContainer width="100%" height={195}>
-                <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
-
-                  <XAxis
-                    type="number"
-                    dataKey="x"
-                    tick={{ fill: C.dim, fontSize: 11 }}
-                    allowDecimals={false}
-                  />
-
-                  <YAxis
-                    type="number"
-                    dataKey="y"
-                    tick={{ fill: C.dim, fontSize: 11 }}
-                    tickFormatter={(v) => v + "%"}
-                    domain={[0, 100]}
-                  />
-
-                  <ZAxis type="number" dataKey="z" range={[60, 200]} />
-
-                  <Tooltip content={<ScatterTooltip />} />
-
-                  <Scatter
-                    name="Events"
-                    data={scatterData}
-                    fill={C.amber}
-                    fillOpacity={0.85}
-                  />
-                </ScatterChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-
-        </div>
       </div>
     </div>
   );
 }
+
+// ─── KPI Card ─────────────────────────────────────────────────────────────────
+type KPICardProps = {
+  label: string;
+  value: string | number;
+};
+
+function KPICard({ label, value }: KPICardProps) {
+  return (
+    <div style={styles.kpiCard}>
+      <span style={styles.kpiLabel}>{label}</span>
+      <span style={styles.kpiValue}>{value}</span>
+    </div>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: "#020817",
+    color: "#f8fafc",
+    padding: "32px",
+    fontFamily: "monospace",
+    maxWidth: "1400px",
+    margin: "0 auto",
+  } as React.CSSProperties,
+  headerRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: "28px",
+    flexWrap: "wrap",
+    gap: "16px",
+  } as React.CSSProperties,
+  title: {
+    fontSize: "2rem",
+    fontWeight: "800",
+    marginBottom: "4px",
+  } as React.CSSProperties,
+  subtitle: {
+    color: "#475569",
+    fontSize: "13px",
+  } as React.CSSProperties,
+  buttonGroup: {
+    display: "flex",
+    gap: "10px",
+    alignItems: "center",
+  } as React.CSSProperties,
+  btnPrimary: {
+    background: "#f59e0b",
+    color: "#020817",
+    border: "none",
+    borderRadius: "8px",
+    padding: "10px 20px",
+    fontFamily: "monospace",
+    fontSize: "13px",
+    fontWeight: "700",
+    cursor: "pointer",
+  } as React.CSSProperties,
+  btnSecondary: {
+    background: "transparent",
+    color: "#94a3b8",
+    border: "1px solid #334155",
+    borderRadius: "8px",
+    padding: "10px 20px",
+    fontFamily: "monospace",
+    fontSize: "13px",
+    fontWeight: "700",
+    cursor: "pointer",
+  } as React.CSSProperties,
+  kpiRow: {
+    display: "flex",
+    gap: "16px",
+    flexWrap: "wrap",
+    marginBottom: "24px",
+  } as React.CSSProperties,
+  kpiCard: {
+    background: "#0f172a",
+    border: "1px solid #1e293b",
+    borderRadius: "12px",
+    padding: "20px 24px",
+    display: "flex",
+    flexDirection: "column" as "column",
+    gap: "8px",
+    minWidth: "160px",
+    flex: 1,
+  } as React.CSSProperties,
+  kpiLabel: {
+    fontSize: "11px",
+    color: "#475569",
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+  } as React.CSSProperties,
+  kpiValue: {
+    fontSize: "2rem",
+    fontWeight: "800",
+    color: "#f8fafc",
+  } as React.CSSProperties,
+  row: {
+    display: "flex",
+    gap: "16px",
+    marginBottom: "16px",
+    flexWrap: "wrap",
+  } as React.CSSProperties,
+  card: {
+    background: "#0f172a",
+    border: "1px solid #1e293b",
+    borderRadius: "12px",
+    padding: "24px",
+    minWidth: "280px",
+  } as React.CSSProperties,
+  cardTitle: {
+    fontSize: "12px",
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
+    marginBottom: "20px",
+  } as React.CSSProperties,
+  center: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "100vh",
+    color: "#94a3b8",
+    fontFamily: "monospace",
+  } as React.CSSProperties,
+  tooltip: {
+    background: "#0f172a",
+    border: "1px solid #1e293b",
+    borderRadius: "8px",
+    color: "#f8fafc",
+  } as React.CSSProperties,
+};
