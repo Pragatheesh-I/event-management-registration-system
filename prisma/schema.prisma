@@ -42,19 +42,21 @@ model User {
 }
 
 model Event {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   title       String
   description String?
   type        EventType
-  isPrivate   Boolean  @default(false)
-  privateCode String?  @unique
+  isPrivate   Boolean   @default(false)
+  privateCode String?   @unique
   createdBy   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  location    String?
+  eventDate   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   organizerId String
-  organizer   User     @relation("OrganizerEvents", fields: [organizerId], references: [id])
+  organizer   User      @relation("OrganizerEvents", fields: [organizerId], references: [id])
 
-  attendees    Attendance[]
+  attendees   Attendance[]
 }
 
 model Attendance {
