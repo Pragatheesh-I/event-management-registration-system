@@ -37,7 +37,7 @@ export default function MyEvents() {
           </p>
 
           <a
-            href="/create-event"
+            href="/portal/organizer/create"
             className="inline-block mt-6 bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3 rounded-xl font-medium hover:scale-105 transition duration-300 shadow-md"
           >
             Create Event →
