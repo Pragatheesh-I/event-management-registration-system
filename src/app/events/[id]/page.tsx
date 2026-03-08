@@ -16,21 +16,40 @@ export default function EventDetail() {
   }, [id])
 
   async function register() {
-  const res = await fetch(`/api/events/${id}/register`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
+
+  try {
+
+    const res = await fetch(`/api/events/${id}/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+
+    const data = await res.json()
+
+    if (res.status === 401) {
+      alert("Please login first to register")
+      window.location.href = "/login"
+      return
     }
-  })
 
-  const data = await res.json()
+    if (res.status === 403) {
+      alert("Only users can register for events")
+      return
+    }
 
-  if (!res.ok) {
-    alert(data.error || "Registration failed")
-    return
+    if (!res.ok) {
+      alert(data.error || "Registration failed")
+      return
+    }
+
+    alert("Successfully Registered!")
+
+  } catch (error) {
+    alert("Something went wrong. Please try again.")
   }
 
-  alert("Registered!")
 }
 
   if (!event) return null

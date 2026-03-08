@@ -10,6 +10,14 @@ export async function POST(
 
   const user: any = await getUserFromRequest(req)
 
+   // Not logged in
+  if (!user) {
+    return NextResponse.json(
+      { error: "Please login first" },
+      { status: 401 }
+    )
+  }
+
   if (user.role !== "USER") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
