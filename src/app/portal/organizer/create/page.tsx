@@ -83,7 +83,10 @@ export default function CreateEvent() {
             <select
               className="w-full bg-gray-50 border border-gray-200 px-4 py-2 rounded-md"
               value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value })}
+              onChange={(e) => {
+                const t = e.target.value;
+                setForm({ ...form, type: t, isPrivate: t === "PRIVATE" });
+              }}
             >
               <option value="PUBLIC">Public Event</option>
               <option value="PRIVATE">Private Event</option>
