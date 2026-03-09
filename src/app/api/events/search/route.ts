@@ -1,21 +1,40 @@
-// Route - > /api/events/search (Search for events based on query parameters)
-import prisma from "@/lib/prisma";
-import { NextResponse } from "next/server";
-
-export async function GET() {
+import prisma from "@/lib/prisma"
+import { NextResponse } from "next/server"
+ 
+export async function POST(req: Request) {
   try {
-    const events = await prisma.event.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return NextResponse.json(events);
+ 
+    const body = await req.json()
+    const { code } = body
+ 
+    if (!code) {
+      return NextResponse.json(
+        { error: "Private code required" },
+        { status: 400 }
+      )
+    }
+ 
+    const event = await prisma.event.findUnique({
+      where: { privateCode: code }
+    })
+ 
+    if (!event) {
+      return NextResponse.json(
+        { error: "Event not found" },
+        { status: 404 }
+      )
+    }
+ 
+    return NextResponse.json(event)
+ 
   } catch (error) {
-    console.error("GET /api/events error:", error);
+ 
+    console.error(error)
+ 
     return NextResponse.json(
-      { error: "Failed to fetch events" },
+      { error: "Server error" },
       { status: 500 }
-    );
+    )
   }
 }
+ 

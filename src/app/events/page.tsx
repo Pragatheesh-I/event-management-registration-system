@@ -28,6 +28,7 @@ export default function EventsPage() {
         setError("");
 
         const res = await fetch("/api/events");
+        console.log("API Response:", res);
         const data = await res.json();
 
         if (!res.ok) throw new Error(data?.error || "Failed to load events");
