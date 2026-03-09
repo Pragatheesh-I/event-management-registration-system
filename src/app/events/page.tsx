@@ -1,7 +1,7 @@
 // This is the Events Page for Public View of All Events -> Aswath
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "react" ;
 import EventCard from "@/components/EventCard";
 
 interface Event {
