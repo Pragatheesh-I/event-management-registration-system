@@ -12,6 +12,14 @@ export async function POST(req: any) {
   const { title, description, type, isPrivate, location, eventDate } =
     await req.json();
 
+  let parsedEventDate: Date | null = null;
+  if (eventDate) {
+    const d = new Date(eventDate);
+    if (!isNaN(d.getTime())) {
+      parsedEventDate = d;
+    }
+  }
+
   const privateCode = isPrivate
     ? Math.random().toString(36).substring(2, 8).toUpperCase()
     : null;
@@ -26,7 +34,7 @@ export async function POST(req: any) {
       organizerId: user.id,
       createdBy: user.id,
       location,
-      eventDate,
+      eventDate: parsedEventDate,
     },
   });
 
