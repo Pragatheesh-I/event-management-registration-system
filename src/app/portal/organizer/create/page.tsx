@@ -108,17 +108,6 @@ export default function CreateEvent() {
               onChange={(e) => setForm({ ...form, eventDate: e.target.value })}
             />
           </div>
-          {/* Private Toggle */}
-          <div className="flex items-center justify-between bg-slate-800/60 border border-slate-700 p-4 rounded-xl">
-            <div>
-              <p className="font-medium">Private Event</p>
-              <p className="text-sm text-slate-400">
-                Only users with a code can join
-              </p>
-            </div>
-
-
-          </div>
 
           <button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 py-3 rounded-xl font-semibold">
             Create Event →
