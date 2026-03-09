@@ -1,1 +1,1 @@
-// This is Dashboard Page for Organizer
+// app/(organizer)/dashboard/page.tsx
