@@ -18,7 +18,7 @@ type User = {
   role: string;
 } | null;
 
-const TEST_ORGANIZER_ID = "55e6b4fb-3dd3-4618-a6d3-2ce3f3f115ba";
+const TEST_ORGANIZER_ID = "b540854b-9c4e-4627-82d2-2ae34efcf377";
 
 type EventRow = {
   id: string;
