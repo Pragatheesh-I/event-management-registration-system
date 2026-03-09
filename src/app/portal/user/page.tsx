@@ -1,6 +1,8 @@
 "use client"
  
+ 
 import { useEffect, useState } from "react"
+ 
  
 export default function RegisteredEvents() {
   const [events, setEvents] = useState<any[]>([])
@@ -100,4 +102,5 @@ export default function RegisteredEvents() {
     </div>
   )
 }
+ 
  
