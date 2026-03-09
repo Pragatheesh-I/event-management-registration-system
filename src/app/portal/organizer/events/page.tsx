@@ -10,7 +10,11 @@ export default function MyEvents() {
   useEffect(() => {
     fetch("/api/organizer/CreatedEvents")
       .then(res => res.json())
-      .then(setEvents)
+      .then((data=>{
+        console.log(data)
+        setEvents(data)
+      })
+    )
   }, [])
  
   return (
@@ -53,10 +57,7 @@ export default function MyEvents() {
           {events.map((event) => (
             <EventCardForCreatedEvents
               key={event.id}
-              event={{
-                ...event,
-                date: event.eventDate
-              }}
+              event={event}
             />
           ))}
         </div>
