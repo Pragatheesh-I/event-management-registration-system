@@ -18,7 +18,7 @@ type User = {
   role: string;
 } | null;
 
-const TEST_ORGANIZER_ID = "b540854b-9c4e-4627-82d2-2ae34efcf377";
+const TEST_ORGANIZER_ID = "55e6b4fb-3dd3-4618-a6d3-2ce3f3f115ba";
 
 type EventRow = {
   id: string;
@@ -32,45 +32,15 @@ type EventRow = {
 
 type FilterType = "all" | "public" | "private";
 
-const C = {
-  pageBg: "#0a0a0a",
-  cardBg: "#141414",
-  border: "#2a2a2a",
-  text: "#f5f5f5",
-  muted: "#6b7280",
-  dim: "#9ca3af",
-  grid: "#1f1f1f",
-  present: "#22c55e",
+const COLORS = {
+  present: "#16a34a",
   absent: "#ef4444",
   notMarked: "#94a3b8",
   amber: "#f59e0b",
   blue: "#3b82f6",
 };
 
-const cardStyle = {
-  background: C.cardBg,
-  border: "1px solid " + C.border,
-  borderRadius: "14px",
-  padding: "24px",
-};
-
-const labelStyle = {
-  fontSize: "10px",
-  fontWeight: 700,
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.1em",
-  color: C.muted,
-  marginBottom: "18px",
-  display: "block",
-};
-
-const tooltipStyle = {
-  background: C.cardBg,
-  border: "1px solid " + C.border,
-  borderRadius: "8px",
-  color: C.text,
-  fontSize: "12px",
-};
+const PRIMARY_BTN_CLASS = "md:min-w-[180px] flex items-center justify-center gap-2 py-[15px] px-6 bg-gradient-to-br from-[#0a3cff] to-[#1a6fff] text-white rounded-xl text-base font-semibold tracking-wide shadow-[0_4px_20px_rgba(10,60,255,0.25)] transition-all duration-150 hover:enabled:-translate-y-px hover:enabled:shadow-[0_6px_28px_rgba(10,60,255,0.35)] active:enabled:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed";
 
 function ScatterTooltip({ active, payload }: any) {
   if (!active || !payload || payload.length === 0) return null;
@@ -78,12 +48,10 @@ function ScatterTooltip({ active, payload }: any) {
   const dot = payload[0].payload;
 
   return (
-    <div style={{ ...tooltipStyle, padding: "10px 14px" }}>
-      <p style={{ fontWeight: 700, color: C.text, margin: "0 0 4px 0" }}>
-        {dot.title}
-      </p>
-      <p style={{ color: C.dim, margin: 0 }}>Registrations: {dot.x}</p>
-      <p style={{ color: C.present, margin: 0 }}>Attendance: {dot.y}%</p>
+    <div className="bg-white border rounded shadow-sm p-3 text-sm">
+      <p className="font-semibold text-gray-800 mb-1">{dot.title}</p>
+      <p className="text-gray-500">Registrations: {dot.x}</p>
+      <p className="text-green-600">Attendance: {dot.y}%</p>
     </div>
   );
 }
@@ -211,24 +179,10 @@ export default function DashboardPage() {
   /* ───────────────── LOADING SCREEN ───────────────── */
   if (authStatus === "loading" || loading) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          background: C.pageBg,
-          color: C.muted,
-          fontFamily: "monospace",
-          gap: "8px",
-        }}
-      >
-        <p style={{ margin: 0 }}>Loading…</p>
-        <p style={{ margin: 0, fontSize: "11px", opacity: 0.5 }}>
-          {authStatus === "authenticated"
-            ? "Auth: " + user?.email
-            : "Auth: using test ID"}
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-500 gap-2">
+        <p className="text-lg">Loading…</p>
+        <p className="text-sm opacity-60">
+          {authStatus === "authenticated" ? "Auth: " + user?.email : "Auth: using test ID"}
         </p>
       </div>
     );
@@ -236,182 +190,73 @@ export default function DashboardPage() {
 
   /* ───────────────── PAGE ───────────────── */
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: C.pageBg,
-        color: C.text,
-        fontFamily: "monospace",
-        padding: "32px",
-      }}
-    >
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+    <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
+      <div className="max-w-5xl mx-auto">
 
         {/* HEADER */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            marginBottom: "32px",
-            flexWrap: "wrap",
-            gap: "16px",
-          }}
-        >
+        <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
           <div>
-            <h1
-              style={{
-                fontSize: "24px",
-                fontWeight: 800,
-                margin: 0,
-                color: C.text,
-              }}
-            >
-              Event Dashboard
-            </h1>
-
-            <p style={{ fontSize: "13px", color: C.muted, margin: "6px 0 0 0" }}>
-              {authStatus === "authenticated"
-                ? "Logged in as " + (user?.name || user?.email)
-                : "Test mode — not logged in"}
+            <h1 className="text-2xl font-extrabold">Event Dashboard</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {authStatus === "authenticated" ? "Logged in as " + (user?.name || user?.email) : "Test mode — not logged in"}
             </p>
           </div>
 
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <button
-              onClick={handleCSV}
-              style={{
-                padding: "9px 20px",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontFamily: "monospace",
-                fontSize: "13px",
-                fontWeight: 600,
-                background: "transparent",
-                color: C.dim,
-                border: "1px solid " + C.border,
-              }}
-            >
-              ⬇ CSV
+          <div className="flex items-center gap-2">
+            <button onClick={handleCSV} className={PRIMARY_BTN_CLASS}>
+              CSV
             </button>
 
-            <button
-              onClick={handlePDF}
-              disabled={exporting}
-              style={{
-                padding: "9px 20px",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontFamily: "monospace",
-                fontSize: "13px",
-                fontWeight: 600,
-                background: exporting ? C.muted : C.amber,
-                color: "#0a0a0a",
-                border: "none",
-                opacity: exporting ? 0.6 : 1,
-              }}
-            >
-              {exporting ? "Generating…" : "⬇ PDF Report"}
+            <button onClick={handlePDF} disabled={exporting} className={PRIMARY_BTN_CLASS}>
+              {exporting ? "Generating…" : "PDF Report"}
             </button>
           </div>
         </div>
 
         {/* FILTER */}
-        <div style={{ marginBottom: "28px" }}>
-          <p style={{ ...labelStyle, marginBottom: "10px" }}>
-            Filter by Event Type
-          </p>
+        <div className="mb-6">
+          <p className="text-xs font-semibold uppercase text-gray-400 mb-2">Filter by Event Type</p>
 
-          <div style={{ display: "flex", gap: "8px" }}>
-            {(["all", "public", "private"] as FilterType[]).map((option) => (
+          <div className="flex gap-2">
+            {( ["all", "public", "private"] as FilterType[] ).map((option) => (
               <button
                 key={option}
                 onClick={() => setFilter(option)}
-                style={{
-                  padding: "8px 20px",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontFamily: "monospace",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  background: filter === option ? C.amber : C.cardBg,
-                  color: filter === option ? "#0a0a0a" : C.dim,
-                  border:
-                    filter === option
-                      ? "none"
-                      : "1px solid " + C.border,
-                }}
+                className={`${PRIMARY_BTN_CLASS} ${filter === option ? '' : 'opacity-90'}`}
               >
                 {option === "all" && "All Events"}
-                {option === "public" && "🌐 Public"}
-                {option === "private" && "🔒 Private"}
+                {option === "public" && "Public"}
+                {option === "private" && "Private"}
               </button>
             ))}
           </div>
         </div>
 
         {/* KPI CARDS */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "12px",
-            marginBottom: "16px",
-          }}
-        >
+        <div className="grid grid-cols-3 gap-4 mb-6">
           {[
-            { label: "Total Events", value: totalEvents, color: C.text },
-            {
-              label: "Registrations",
-              value: totalRegistrations,
-              color: C.text,
-            },
-            {
-              label: "Attendance Rate",
-              value: attendanceRate,
-              color: C.present,
-            },
-            { label: "Present", value: totalPresent, color: C.present },
-            { label: "Absent", value: totalAbsent, color: C.absent },
-            {
-              label: "Not Marked",
-              value: totalNotMarked,
-              color: C.notMarked,
-            },
-          ].map(({ label, value, color }) => (
-            <div key={label} style={cardStyle}>
-              <span style={labelStyle}>{label}</span>
-              <p
-                style={{
-                  fontSize: "36px",
-                  fontWeight: 800,
-                  color: color,
-                  margin: 0,
-                }}
-              >
-                {value}
-              </p>
+            { label: "Total Events", value: totalEvents },
+            { label: "Registrations", value: totalRegistrations },
+            { label: "Attendance Rate", value: attendanceRate },
+            { label: "Present", value: totalPresent },
+            { label: "Absent", value: totalAbsent },
+            { label: "Not Marked", value: totalNotMarked },
+          ].map(({ label, value }) => (
+            <div key={label} className="bg-white rounded-lg p-4 shadow-sm border">
+              <span className="text-xs font-semibold uppercase text-gray-400">{label}</span>
+              <p className="text-2xl font-extrabold mt-2">{value}</p>
             </div>
           ))}
         </div>
 
         {/* CHART ROW 1 */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "2fr 1fr",
-            gap: "12px",
-            marginBottom: "12px",
-          }}
-        >
+        <div className="grid grid-cols-2 gap-4 mb-4">
 
-          <div style={cardStyle}>
-            <span style={labelStyle}>Attendance by Event</span>
+          <div className="bg-white rounded-lg p-4 shadow-sm border">
+            <span className="text-xs font-semibold uppercase text-gray-400">Attendance by Event</span>
 
             {events.length === 0 ? (
-              <p style={{ color: C.muted, textAlign: "center", padding: "40px 0" }}>
-                No {filter} events found.
-              </p>
+              <p className="text-gray-500 text-center py-10">No {filter} events found.</p>
             ) : (
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart
@@ -419,26 +264,26 @@ export default function DashboardPage() {
                   barCategoryGap="35%"
                   margin={{ bottom: 60 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
                   <XAxis
                     dataKey="title"
                     interval={0}
-                    tick={{ fill: C.dim, fontSize: 9 }}
+                    tick={{ fill: '#6b7280', fontSize: 11 }}
                     height={40}
                   />
-                  <YAxis tick={{ fill: C.dim, fontSize: 11 }} allowDecimals={false} />
-                  <Tooltip contentStyle={tooltipStyle} />
+                  <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} allowDecimals={false} />
+                  <Tooltip />
                   <Legend iconType="circle" iconSize={8} />
-                  <Bar dataKey="present" fill={C.present} radius={[4,4,0,0]} />
-                  <Bar dataKey="absent" fill={C.absent} radius={[4,4,0,0]} />
-                  <Bar dataKey="notMarked" fill={C.notMarked} radius={[4,4,0,0]} />
+                  <Bar dataKey="present" fill={COLORS.present} radius={[4,4,0,0]} />
+                  <Bar dataKey="absent" fill={COLORS.absent} radius={[4,4,0,0]} />
+                  <Bar dataKey="notMarked" fill={COLORS.notMarked} radius={[4,4,0,0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
           </div>
 
-          <div style={cardStyle}>
-            <span style={labelStyle}>Attendance Split</span>
+          <div className="bg-white rounded-lg p-4 shadow-sm border">
+            <span className="text-xs font-semibold uppercase text-gray-400">Attendance Split</span>
 
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
@@ -449,12 +294,12 @@ export default function DashboardPage() {
                   outerRadius={85}
                   paddingAngle={3}
                 >
-                  <Cell fill={C.present} />
-                  <Cell fill={C.absent} />
-                  <Cell fill={C.notMarked} />
+                  <Cell fill={COLORS.present} />
+                  <Cell fill={COLORS.absent} />
+                  <Cell fill={COLORS.notMarked} />
                 </Pie>
 
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip />
                 <Legend iconType="circle" iconSize={8} />
               </PieChart>
             </ResponsiveContainer>
@@ -463,10 +308,10 @@ export default function DashboardPage() {
         </div>
 
         {/* CHART ROW 2 */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+        <div className="grid grid-cols-2 gap-4">
 
-          <div style={cardStyle}>
-            <span style={labelStyle}>Top Events by Registrations</span>
+          <div className="bg-white rounded-lg p-4 shadow-sm border">
+            <span className="text-xs font-semibold uppercase text-gray-400">Top Events by Registrations</span>
 
             <ResponsiveContainer width="100%" height={220}>
               <BarChart
@@ -476,40 +321,38 @@ export default function DashboardPage() {
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke={C.grid}
+                  stroke="#f3f4f6"
                   horizontal={false}
                 />
-                <XAxis type="number" tick={{ fill: C.dim, fontSize: 11 }} allowDecimals={false} />
-                <YAxis type="category" dataKey="title" tick={{ fill: C.dim, fontSize: 9 }} width={130} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="total" fill={C.blue} radius={[0,6,6,0]} />
+                <XAxis type="number" tick={{ fill: '#6b7280', fontSize: 11 }} allowDecimals={false} />
+                <YAxis type="category" dataKey="title" tick={{ fill: '#6b7280', fontSize: 11 }} width={140} />
+                <Tooltip />
+                <Bar dataKey="total" fill={COLORS.blue} radius={[0,6,6,0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          <div style={cardStyle}>
-            <span style={labelStyle}>Registrations vs Attendance Rate</span>
+          <div className="bg-white rounded-lg p-4 shadow-sm border">
+            <span className="text-xs font-semibold uppercase text-gray-400">Registrations vs Attendance Rate</span>
 
             {scatterData.length === 0 ? (
-              <p style={{ color: C.muted, textAlign: "center", padding: "40px 0" }}>
-                No data yet.
-              </p>
+              <p className="text-gray-500 text-center py-10">No data yet.</p>
             ) : (
               <ResponsiveContainer width="100%" height={195}>
                 <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
 
                   <XAxis
                     type="number"
                     dataKey="x"
-                    tick={{ fill: C.dim, fontSize: 11 }}
+                    tick={{ fill: '#6b7280', fontSize: 11 }}
                     allowDecimals={false}
                   />
 
                   <YAxis
                     type="number"
                     dataKey="y"
-                    tick={{ fill: C.dim, fontSize: 11 }}
+                    tick={{ fill: '#6b7280', fontSize: 11 }}
                     tickFormatter={(v) => v + "%"}
                     domain={[0, 100]}
                   />
@@ -521,7 +364,7 @@ export default function DashboardPage() {
                   <Scatter
                     name="Events"
                     data={scatterData}
-                    fill={C.amber}
+                    fill={COLORS.amber}
                     fillOpacity={0.85}
                   />
                 </ScatterChart>

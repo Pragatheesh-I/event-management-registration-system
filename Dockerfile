@@ -1,22 +1,21 @@
-# ---- Dev image ----
+# Dockerfile for Next.js application with Prisma
 FROM node:22-alpine
 
-# Recommended for Prisma (OpenSSL + glibc compatibility)
+# Install necessary packages for Prisma and Next.js
 RUN apk add --no-cache openssl libc6-compat
 
+# Set the working directory
 WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
 RUN npm ci
 
-# Copy the rest of the project
+# Copy the rest of the application code
 COPY . .
 
 # Expose Next.js default port
 EXPOSE 3000
 
-# Generate Prisma client and ensure DB schema is pushed on container start
-# - prisma generate needs DATABASE_URL at runtime (Compose supplies it)
-# - db push creates tables for dev (no migrations required)
+# Run Prisma migrations and start the Next.js development server
 CMD ["sh", "-c", "npx prisma generate && npx prisma db push && npm run dev"]
