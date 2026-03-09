@@ -1,9 +1,9 @@
 "use client"
  
 import { useEffect, useState } from "react"
-import EventCard from "@/components/EventCard"
+import EventCardForCreatedEvents from "@/components/EventCardForCreatedEvents"
 import Link from "next/link"
- 
+
 export default function MyEvents() {
   const [events, setEvents] = useState<any[]>([])
  
@@ -51,7 +51,7 @@ export default function MyEvents() {
       {events.length > 0 && (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {events.map((event) => (
-            <EventCard
+            <EventCardForCreatedEvents
               key={event.id}
               event={{
                 ...event,
