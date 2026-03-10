@@ -22,3 +22,6 @@ runcmd:
 
   # Install Azure CLI
   - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+
+  # Run postgres container
+  - sudo volume create postgres_data
