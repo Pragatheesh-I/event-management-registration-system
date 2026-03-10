@@ -1,43 +1,45 @@
-# ---------- Stage 1: Dependencies ----------
+# ---------- 1️⃣ Dependencies ----------
 FROM node:22-alpine AS deps
+
 WORKDIR /app
 
-# placeholder secret for build
-ENV JWT_SECRET=build-placeholder
-
-RUN apk add --no-cache openssl libc6-compat
+RUN apk add --no-cache libc6-compat openssl
 
 COPY package*.json ./
+
 RUN npm ci
 
-
-# ---------- Stage 2: Builder ----------
+# ---------- 2️⃣ Builder ----------
 FROM node:22-alpine AS builder
+
 WORKDIR /app
 
-RUN apk add --no-cache openssl libc6-compat
+ENV JWT_SECRET=build-placeholder
+
+RUN apk add --no-cache libc6-compat openssl
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma Client FIRST
 RUN npx prisma generate
-
-# Then build Next.js
 RUN npm run build
 
-
-# ---------- Stage 3: Runtime ----------
+# ---------- 3️⃣ Production ----------
 FROM node:22-alpine AS runner
-WORKDIR /app
 
-RUN apk add --no-cache openssl libc6-compat
+WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --from=builder /app ./
+RUN apk add --no-cache libc6-compat openssl
+
+# Copy only production files
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node bootstrap.js"]
-
+CMD ["npm","start"]
