@@ -1,60 +1,45 @@
-name: Build and Deploy to Azure
+name: CD - Build and Push to ACR
  
 on:
   push:
-    branches:
-      - dev
+    branches: ["dev"]
+  workflow_dispatch:
  
 jobs:
-  build-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
- 
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v4
  
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
  
-      - name: Login to Azure Container Registry
+      - name: Log in to Azure Container Registry
         uses: docker/login-action@v3
         with:
-         registry: ${{ secrets.ACR_LOGINSERVER }}
-         username: ${{ secrets.ACR_USERNAME }}
-         password: ${{ secrets.ACR_PASSWORD }}
+          registry: ${{ secrets.ACR_LOGINSERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
  
-      - name: Build Docker Image
-        run: |
-          docker build -t ${{ vars.ACR_NAME }}.azurecr.io/${{ vars.IMAGE_NAME }}:latest .
- 
-      - name: Push Docker Image
-        run: |
-          docker push ${{ vars.ACR_NAME }}.azurecr.io/${{ vars.IMAGE_NAME }}:latest
- 
-      - name: Deploy to VM
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Build and push Client
+        uses: docker/build-push-action@v5
         with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          script: |
-            az login --identity
-            docker pull ${{ vars.ACR_NAME }}.azurecr.io/${{ vars.IMAGE_NAME }}:latest
+          context: ./client
+          file: ./client/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.ACR_LOGINSERVER}}/client:latest
+            ${{ secrets.ACR_LOGINSERVER }}/client:${{ github.sha }}
+            ${{ secrets.ACR_LOGINSERVER }}/client:${{ github.run_number }}
  
-            DATABASE_URL=$(az keyvault secret show \
-              --vault-name ${{ vars.KEYVAULT_NAME }} \
-              --name DATABASE_URL \
-              --query value -o tsv)
- 
-            JWT_SECRET=$(az keyvault secret show \
-              --vault-name ${{ vars.KEYVAULT_NAME }} \
-              --name JWT-SECRET \
-              --query value -o tsv)
- 
-            export DATABASE_URL
-            export JWT_SECRET
- 
-            docker compose down
-            docker compose up -d
+      - name: Build and push Server
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server
+          file: ./server/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.ACR_LOGINSERVER }}/server:latest
+            ${{ secrets.ACR_LOGINSERVER }}/server:${{ github.sha }}
+            ${{ secrets.ACR_LOGINSERVER }}/server:${{ github.run_number }}
