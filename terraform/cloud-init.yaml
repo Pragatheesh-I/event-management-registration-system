@@ -22,8 +22,5 @@ runcmd:
   # Install Azure CLI
   - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
-  # Create persistent volume for postgres
-  - docker volume create postgres_data
-
-  # Run PostgreSQL container
-  - docker run -d --name postgres-db --restart always -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=password -e POSTGRES_DB=appdb -p 5432:5432 -v postgres_data:/var/lib/postgresql/data postgres:15
+  # Install Docker Compose
+  - apt install -y docker-compose
