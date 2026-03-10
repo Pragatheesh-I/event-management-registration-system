@@ -22,13 +22,3 @@ runcmd:
 
   # Install Azure CLI
   - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
-
-  # Run postgres container
-  - docker run -d \
-      --name postgres-db \
-      -e POSTGRES_USER=postgres \
-      -e POSTGRES_PASSWORD=postgres \
-      -e POSTGRES_DB=appdb \
-      -p 5432:5432 \
-      -v /data/postgres:/var/lib/postgresql/data \
-      postgres:15
