@@ -1,7 +1,7 @@
 // This is the Events Page for Public View of All Events -> Aswath
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "react" ;
 import EventCard from "@/components/EventCard";
 
 interface Event {
@@ -28,6 +28,7 @@ export default function EventsPage() {
         setError("");
 
         const res = await fetch("/api/events");
+        console.log("API Response:", res);
         const data = await res.json();
 
         if (!res.ok) throw new Error(data?.error || "Failed to load events");
