@@ -42,4 +42,5 @@ COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3000
 
-CMD ["npm","start"]
+CMD ["sh", "-c", "node bootstrap.js && npm start"]
+
