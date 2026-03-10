@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import toast from "react-hot-toast"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -30,8 +31,10 @@ export default function RegisterPage() {
     const data = await res.json()
 
     if (res.ok) {
+      toast.success("Registered Successfully")
       router.push("/login")
     } else {
+      toast.error("Invalid Email or Password")
       setError(data.error || "Something went wrong")
       setLoading(false)
     }

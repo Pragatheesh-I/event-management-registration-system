@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import toast from "react-hot-toast"
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" })
@@ -9,24 +10,36 @@ export default function LoginPage() {
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
+  e.preventDefault()
+  setLoading(true)
+  setError("")
 
+  try {
     const res = await fetch("/api/auth/login", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(form),
     })
 
     if (res.ok) {
-      router.push("/")
-      router.refresh()
-
+      toast.success("Login successful")
+      setTimeout(()=>{
+         router.push("/")
+         router.refresh()
+      },2000)
+     
     } else {
+      toast.error("Invalid email or password")
       setError("Invalid email or password. Please try again.")
-      setLoading(false)
     }
+  } catch (err) {
+    toast.error("Something went wrong")
   }
+
+  setLoading(false)
+}
 
   return (
     <div className="min-h-screen flex bg-[#f0f6ff] font-sans">
@@ -122,9 +135,9 @@ export default function LoginPage() {
                 <label className="text-[0.82rem] font-medium text-[#3a4f6e] uppercase tracking-[0.04em]">
                   Password
                 </label>
-                <a href="/forgot-password" className="text-[0.82rem] text-[#0a3cff] font-medium hover:underline">
+                {/* <a href="/forgot-password" className="text-[0.82rem] text-[#0a3cff] font-medium hover:underline">
                   Forgot password?
-                </a>
+                </a> */}
               </div>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#90a8c8] pointer-events-none">
