@@ -24,9 +24,9 @@ jobs:
        # Optional: test SSH connection using the secret
       - name: Test SSH connection
         run: |
-          echo "$SSH_KEY" | ssh -o StrictHostKeyChecking=no -i /dev/stdin ${{ secrets.APP_VM_USER }}@${{ secrets.APP_VM_HOST }} 'echo "SSH connection works!"'
+          echo "$SSH_KEY" | ssh -o StrictHostKeyChecking=no -i /dev/stdin ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} 'echo "SSH connection works!"'
         env:
-          SSH_KEY: ${{ secrets.APP_VM_SSH_KEY }} 
+          SSH_KEY: ${{ secrets.VM_SSH_KEY }}
       - name: Build and push the app
         uses: docker/build-push-action@v5
         with:
