@@ -24,6 +24,7 @@ jobs:
          registry: ${{ vars.ACR_NAME }}
          username: ${{ secrets.ACR_USERNAME }}
          password: ${{ secrets.ACR_PASSWORD }}
+         logout: true
  
       - name: Build Docker Image
         run: |
