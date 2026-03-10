@@ -1,7 +1,14 @@
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/getUserFromRequest";
 import { NextResponse } from "next/server";
-
+interface requestBody {
+  title: string;
+  description?: string;
+  type: string;
+  isPrivate?: boolean;
+  location?: string;
+  eventDate?: string | Date | null;
+}
 export async function POST(req: any) {
   try {
     const user: any = await getUserFromRequest(req);

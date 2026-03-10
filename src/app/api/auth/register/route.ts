@@ -1,10 +1,17 @@
 // Routes for Register    
+import { User } from "@/generated/prisma/edge"
 import prisma from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { NextResponse } from "next/server"
- 
+interface RegisterRequest {
+  name: string
+  email: string
+  password: string
+  role: "USER" | "ORGANIZER"
+}
+
 export async function POST(req: Request) {
-  const body = await req.json()
+  const body: RegisterRequest = await req.json()
   const { name, email, password, role } = body
  
   if (!name || !email || !password) {
@@ -21,7 +28,7 @@ export async function POST(req: Request) {
  
   const hashedPassword = await bcrypt.hash(password, 10)
  
-  const user = await prisma.user.create({
+  const user: User = await prisma.user.create({
     data: {
       name,
       email,

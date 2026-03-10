@@ -2,7 +2,7 @@ import { SecretClient } from "@azure/keyvault-secrets";
 import { DefaultAzureCredential } from "@azure/identity";
 
 export async function getSecret(secretName: string) {
-  const vaultName = "vmkeyvaultname";
+  const vaultName = "events-kv-unique123";
   const url = `https://${vaultName}.vault.azure.net`;
   
   // Uses environment variables (AZURE_CLIENT_ID, etc.) or Managed Identity

@@ -2,13 +2,21 @@
 import prisma from "@/lib/prisma"
 import { getUserFromRequest } from "@/lib/getUserFromRequest"
 import { NextResponse } from "next/server"
+import { $Enums } from "@/generated/prisma";
+
+interface Attendance {
+    id: string;
+    userId: string;
+    eventId: string;
+    status: $Enums.AttendanceStatus;
+}
 
 export async function POST(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
 
-  const user: any = await getUserFromRequest(req)
+  const user = await getUserFromRequest(req)
 
    // Not logged in
   if (!user) {
@@ -22,11 +30,11 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  const { id } = await context.params
+  const { id } : { id: string } = await context.params
 
-  const attendance = await prisma.attendance.create({
+  const attendance :Attendance = await prisma.attendance.create({
     data: {
-      userId: user.id,
+      userId : user.id as string,
       eventId: id
     }
   })

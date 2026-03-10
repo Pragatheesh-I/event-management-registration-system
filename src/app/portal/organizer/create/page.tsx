@@ -7,11 +7,18 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { eventSchema } from "@/lib/zod/eventSchema";
 import z from "zod";
-
+interface FormData {
+  title: string;
+  description: string;
+  type: "PUBLIC" | "PRIVATE";
+  isPrivate: boolean;
+  location: string;
+  eventDate: string;
+}
 export default function CreateEvent() {
   const router = useRouter();
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormData>({
     title: "",
     description: "",
     type: "PUBLIC",
@@ -58,10 +65,10 @@ export default function CreateEvent() {
   const result = eventSchema.safeParse(form)
 
   if (!result.success){
-    const error = z.treeifyError(result.error)
-    toast.success("Please Enter Valid Details")
+    const error = result.error.issues[0]
+    toast.error(error.message)
     return
-  }
+  }else{
 
   try {
     const res = await fetch("/api/organizer/create", {
@@ -97,6 +104,7 @@ export default function CreateEvent() {
     console.error(error)
     toast.error(error.message || "Something went wrong")
   }
+}
 }
 
   return (
