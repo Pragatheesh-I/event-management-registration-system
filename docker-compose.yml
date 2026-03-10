@@ -15,11 +15,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile  
-    env_file:
-      - .env
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      JWT_SECRET: ${JWT_SECRET}
     ports:
       - "0.0.0.0:8080:3000"
     depends_on:
@@ -27,5 +22,3 @@ services:
 
 volumes:
   postgres_data:
-
-
