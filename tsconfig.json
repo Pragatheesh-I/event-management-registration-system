@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "bootstrap.js", "src/lib/loadSecrets.js"  ],
   "exclude": ["node_modules"]
 }

@@ -6,11 +6,6 @@ resource "azurerm_key_vault" "main" {
   resource_group_name         = azurerm_resource_group.main.name
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   sku_name                    = "standard"
-  network_acls {
-    default_action             = "Deny"                         # block everything by default
-    bypass                     = "AzureServices"               # allow trusted MS services if needed
-    virtual_network_subnet_ids = [azurerm_subnet.main.id]      # only this subnet can connect
-  }
 }
  
 resource "azurerm_key_vault_access_policy" "vm_policy" {

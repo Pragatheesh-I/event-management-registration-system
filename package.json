@@ -24,6 +24,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@azure/identity": "^4.13.0",
+    "@azure/keyvault-secrets": "^4.10.0",
     "@faker-js/faker": "^10.3.0",
     "@prisma/adapter-pg": "^7.4.2",
     "@prisma/client": "^7.4.1",
@@ -56,5 +58,6 @@
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
-  }
+  },
+  "type": "module"
 }
