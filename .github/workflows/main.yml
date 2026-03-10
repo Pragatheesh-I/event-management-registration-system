@@ -32,6 +32,12 @@ jobs:
             ${{ secrets.ACR_LOGINSERVER}}/app:latest
             ${{ secrets.ACR_LOGINSERVER }}/app:${{ github.sha }}
             ${{ secrets.ACR_LOGINSERVER }}/app:${{ github.run_number }}
+       # Optional: test SSH connection using the secret
+      - name: Test SSH connection
+        run: |
+          echo "$SSH_KEY" | ssh -o StrictHostKeyChecking=no -i /dev/stdin ${{ secrets.APP_VM_USER }}@${{ secrets.APP_VM_HOST }} 'echo "SSH connection works!"'
+        env:
+          SSH_KEY: ${{ secrets.APP_VM_SSH_KEY }}
       - name: Deploy to App VM
         uses: appleboy/ssh-action@v0.1.7
         with:
