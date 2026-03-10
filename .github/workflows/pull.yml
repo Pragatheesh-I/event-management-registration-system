@@ -3,9 +3,7 @@ name: CI/CD - Build Push Deploy
 on:
   push:
     branches: ["dev"]
- 
-env:
-  KEYVAULT_NAME: ${{ vars.KEYVAULT_NAME }}
+
  
 jobs:
   build-and-deploy:
@@ -21,15 +19,6 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
  
-      - name: Get secrets from Key Vault
-        id: keyvault
-        uses: azure/get-keyvault-secrets@v1
-        with:
-          keyvault: ${{ env.KEYVAULT_NAME }}
-          secrets: |
-            DATABASE-URL
-            JWT-SECRET
- 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
  
@@ -39,19 +28,6 @@ jobs:
           registry: ${{ secrets.ACR_LOGINSERVER }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
- 
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: |
-            ${{ secrets.ACR_LOGINSERVER }}/app:latest
-            ${{ secrets.ACR_LOGINSERVER }}/app:${{ github.sha }}
-          build-args: |
-            DATABASE_URL=${{ steps.keyvault.outputs.DATABASE-URL }}
-            JWT_SECRET=${{ steps.keyvault.outputs.JWT-SECRET }}
  
       - name: Deploy to Azure VM
         uses: appleboy/ssh-action@v1.0.3
@@ -67,6 +43,16 @@ jobs:
             docker pull ${{ secrets.ACR_LOGINSERVER }}/app:latest
  
             cd /home/${{ secrets.VM_USERNAME }}/app
+
+            DATABASE_URL=$(az keyvault secret show \
+            --vault-name events-kv \
+            --name DATABASE-URL \
+            --query value -o tsv)
+             
+            JWT_SECRET=$(az keyvault secret show \
+            --vault-name events-kv \
+            --name JWT-SECRET \
+            --query value -o tsv)
  
             docker compose down
             docker compose pull
