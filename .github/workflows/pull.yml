@@ -1,0 +1,74 @@
+name: CI/CD - Build Push Deploy
+ 
+on:
+  push:
+    branches: ["dev"]
+ 
+env:
+  KEYVAULT_NAME: ${{ vars.KEYVAULT_NAME }}
+ 
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+ 
+    steps:
+ 
+      - name: Checkout code
+        uses: actions/checkout@v4
+ 
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+ 
+      - name: Get secrets from Key Vault
+        id: keyvault
+        uses: azure/get-keyvault-secrets@v1
+        with:
+          keyvault: ${{ env.KEYVAULT_NAME }}
+          secrets: |
+            DATABASE-URL
+            JWT-SECRET
+ 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+ 
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_LOGINSERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+ 
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.ACR_LOGINSERVER }}/app:latest
+            ${{ secrets.ACR_LOGINSERVER }}/app:${{ github.sha }}
+          build-args: |
+            DATABASE_URL=${{ steps.keyvault.outputs.DATABASE-URL }}
+            JWT_SECRET=${{ steps.keyvault.outputs.JWT-SECRET }}
+ 
+      - name: Deploy to Azure VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            docker login ${{ secrets.ACR_LOGINSERVER }} \
+            -u ${{ secrets.ACR_USERNAME }} \
+            -p ${{ secrets.ACR_PASSWORD }}
+ 
+            docker pull ${{ secrets.ACR_LOGINSERVER }}/app:latest
+ 
+            cd /home/${{ secrets.VM_USERNAME }}/app
+ 
+            docker compose down
+            docker compose pull
+            docker compose up -d
+ 
