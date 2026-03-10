@@ -32,4 +32,13 @@ jobs:
             ${{ secrets.ACR_LOGINSERVER}}/app:latest
             ${{ secrets.ACR_LOGINSERVER }}/app:${{ github.sha }}
             ${{ secrets.ACR_LOGINSERVER }}/app:${{ github.run_number }}
- 
+      - name: Deploy to App VM
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            docker login ${{ secrets.ACR_LOGINSERVER }} -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
+            docker-compose pull
+            docker-compose up -d --remove-orphans
