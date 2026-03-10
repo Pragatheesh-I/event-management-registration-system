@@ -19,3 +19,5 @@ EXPOSE 3000
 
 # Run Prisma migrations and start the Next.js development server
 CMD ["sh", "-c", "npx prisma generate && npx prisma db push && npm run dev"]
+
+
