@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
+import { registerSchema } from "@/lib/zod/registerSchema"
  
 export default function RegisterPage() {
   const router = useRouter()
@@ -21,15 +22,22 @@ export default function RegisterPage() {
     e.preventDefault()
     setLoading(true)
     setError("")
+
+     const result = registerSchema.safeParse(form)
+    if (!result.success){
+        const error = result.error.issues[0];
+        toast.error(error.message)
+        setLoading(false)
+    }else {
  
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(result.data),
     })
  
     const data = await res.json()
- 
+  
     if (res.ok) {
       toast.success("Registered Successfully")
       router.push("/login")
@@ -38,6 +46,7 @@ export default function RegisterPage() {
       setError(data.error || "Something went wrong")
       setLoading(false)
     }
+  }
   }
  
   return (

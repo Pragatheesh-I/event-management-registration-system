@@ -3,7 +3,9 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
- 
+import {z} from "zod"
+import { loginSchema } from "@/lib/zod/loginSchema"
+
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" })
   const [loading, setLoading] = useState(false)
@@ -14,14 +16,20 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError("")
- 
+    const result = loginSchema.safeParse(form)
+    if (!result.success){
+        const error = result.error.issues[0]
+        toast.error(error.message)
+        setLoading(false)
+    }else{
+   
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(result.data),
       })
  
       if (res.ok) {
@@ -39,6 +47,7 @@ export default function LoginPage() {
     }
  
     setLoading(false)
+  }
   }
  
   return (
