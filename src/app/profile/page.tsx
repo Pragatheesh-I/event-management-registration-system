@@ -1,8 +1,8 @@
 "use client"
  interface User {
   id: string
-  name?: string
-  email?: string
+  name?:  string | undefined
+  email?: string |undefined
   role: "USER" | "ORGANIZER"
 }
 import { useEffect, useState } from "react"
@@ -72,8 +72,8 @@ export default function Profile() {
         </div>
  
         <div className="space-y-4">
-          <ProfileRow label="Full Name" value={user.name} />
-          <ProfileRow label="Email" value={user.email} />
+          <ProfileRow label="Full Name" value={ user.name || ""} />
+          <ProfileRow label="Email" value={user.email || ""} />
           <ProfileRow label="Role" value={user.role} highlight />
         </div>
  
