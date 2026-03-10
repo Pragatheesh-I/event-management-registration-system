@@ -22,24 +22,14 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
  
-      - name: Build and push Client
+      - name: Build and push the app
         uses: docker/build-push-action@v5
         with:
-          context: ./client
-          file: ./client/Dockerfile
+          context: .
+          file: ./Dockerfile
           push: true
           tags: |
-            ${{ secrets.ACR_LOGINSERVER}}/client:latest
-            ${{ secrets.ACR_LOGINSERVER }}/client:${{ github.sha }}
-            ${{ secrets.ACR_LOGINSERVER }}/client:${{ github.run_number }}
+            ${{ secrets.ACR_LOGINSERVER}}/app:latest
+            ${{ secrets.ACR_LOGINSERVER }}/app:${{ github.sha }}
+            ${{ secrets.ACR_LOGINSERVER }}/app:${{ github.run_number }}
  
-      - name: Build and push Server
-        uses: docker/build-push-action@v5
-        with:
-          context: ./server
-          file: ./server/Dockerfile
-          push: true
-          tags: |
-            ${{ secrets.ACR_LOGINSERVER }}/server:latest
-            ${{ secrets.ACR_LOGINSERVER }}/server:${{ github.sha }}
-            ${{ secrets.ACR_LOGINSERVER }}/server:${{ github.run_number }}
