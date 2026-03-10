@@ -21,7 +21,7 @@ jobs:
  
     - name: Login to Azure Container Registry
       run: |
-        az acr login --name ${{ vars.ACR_NAME }} --resource-group events-rg
+        az acr login --name eventsacrregistry --expose-token
  
     - name: Build Docker Image
       run: |
