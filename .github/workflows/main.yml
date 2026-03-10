@@ -10,50 +10,51 @@ jobs:
     runs-on: ubuntu-latest
  
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
  
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
  
-    - name: Login to Azure
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Login to Azure Container Registry
+        run: az acr login --name ${{ vars.ACR_NAME }}
  
-    - name: Login to Azure Container Registry
-      run: |
-        az acr login --name ${{ vars.ACR_NAME }}
+      - name: Set image name
+        run: echo "IMAGE=${{ vars.ACR_NAME }}.azurecr.io/${{ vars.IMAGE_NAME }}:latest" >> $GITHUB_ENV
  
-    - name: Build Docker Image
-      run: |
-        docker build -t ${{ vars.ACR_NAME }}.azurecr.io/${{ vars.IMAGE_NAME }}:latest .
+      - name: Build Docker Image
+        run: docker build -t "$IMAGE" .
  
-    - name: Push Docker Image
-      run: |
-        docker push ${{ vars.ACR_NAME }}.azurecr.io/${{ vars.IMAGE_NAME }}:latest
+      - name: Push Docker Image
+        run: docker push "$IMAGE"
  
-    - name: Deploy to VM
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.VM_HOST }}
-        username: ${{ secrets.VM_USER }}
-        key: ${{ secrets.VM_SSH_KEY }}
-        script: |
-     
-          docker pull ${{ vars.ACR_NAME }}.azurecr.io/${{ vars.IMAGE_NAME }}:latest
-     
-          DATABASE_URL=$(az keyvault secret show \
-            --vault-name ${{ vars.KEYVAULT_NAME }} \
-            --name DATABASE_URL \
-            --query value -o tsv)
-     
-          JWT_SECRET=$(az keyvault secret show \
-            --vault-name ${{ vars.KEYVAULT_NAME }} \
-            --name JWT_SECRET \
-            --query value -o tsv)
-     
-          export DATABASE_URL
-          export JWT_SECRET
-     
-          docker compose down
-          docker compose up -d
-     
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            IMAGE="${{ vars.ACR_NAME }}.azurecr.io/${{ vars.IMAGE_NAME }}:latest"
+ 
+            az acr login --name ${{ vars.ACR_NAME }}
+ 
+            docker pull "$IMAGE"
+ 
+            DATABASE_URL=$(az keyvault secret show \
+              --vault-name ${{ vars.KEYVAULT_NAME }} \
+              --name DATABASE_URL \
+              --query value -o tsv)
+ 
+            JWT_SECRET=$(az keyvault secret show \
+              --vault-name ${{ vars.KEYVAULT_NAME }} \
+              --name JWT_SECRET \
+              --query value -o tsv)
+ 
+            export DATABASE_URL
+            export JWT_SECRET
+ 
+            docker compose down || true
+            docker compose up -d
