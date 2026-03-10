@@ -21,12 +21,6 @@ jobs:
           registry: ${{ secrets.ACR_LOGINSERVER }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
-       # Optional: test SSH connection using the secret
-      - name: Test SSH connection
-        run: |
-          echo "$SSH_KEY" | ssh -o StrictHostKeyChecking=no -i /dev/stdin ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} 'echo "SSH connection works!"'
-        env:
-          SSH_KEY: ${{ secrets.VM_SSH_KEY }}
       - name: Build and push the app
         uses: docker/build-push-action@v5
         with:
