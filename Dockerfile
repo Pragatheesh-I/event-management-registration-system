@@ -2,6 +2,9 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 
+# placeholder secret for build
+ENV JWT_SECRET=build-placeholder
+
 RUN apk add --no-cache openssl libc6-compat
 
 COPY package*.json ./
@@ -37,3 +40,4 @@ COPY --from=builder /app ./
 EXPOSE 3000
 
 CMD ["sh", "-c", "npx prisma migrate deploy && node bootstrap.js"]
+
