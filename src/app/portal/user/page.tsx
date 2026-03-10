@@ -1,11 +1,18 @@
 "use client"
  
- 
 import { useEffect, useState } from "react"
- 
+interface Event {
+  id: string
+  event: {
+    title: string
+    description: string
+    location: string
+    eventDate: string
+  }
+}
  
 export default function RegisteredEvents() {
-  const [events, setEvents] = useState<any[]>([])
+  const [events, setEvents] = useState<Event[]>([])
  
   useEffect(() => {
     fetch("/api/registration")
@@ -102,5 +109,4 @@ export default function RegisteredEvents() {
     </div>
   )
 }
- 
  

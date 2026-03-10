@@ -2,6 +2,7 @@
  
 import { useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
+import toast from "react-hot-toast"
  
 interface User {
   id: string
@@ -77,8 +78,10 @@ export default function EventDetail() {
  
   async function register() {
     if (!user) {
-      alert("Please login first to register")
-      window.location.href = "/login"
+       toast.error("Please login first")
+       setTimeout(() => {
+        window.location.href = "/login"
+      }, 1200)
       return
     }
  
@@ -98,22 +101,23 @@ export default function EventDetail() {
       const data = await res.json()
  
       if (res.status === 401) {
-        alert("Please login first to register")
-        window.location.href = "/login"
-        return
+         toast.error("Please login first")
+        setTimeout(() => {
+          window.location.href = "/login"
+        }, 1200)
       }
  
       if (res.status === 403) {
-        alert("Only users can register for events")
+        toast.error("Only users can register for events")
         return
       }
  
       if (!res.ok) {
-        alert(data.error || "Registration failed")
+        toast.error(data.error || "Registration failed")
         return
       }
  
-      alert("Successfully registered!")
+      toast.success("Successfully registered!")
       loadPage()
     } catch (err) {
       console.error(err)

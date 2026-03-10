@@ -21,3 +21,20 @@ export async function GET(
 
   return NextResponse.json(event)
 }
+ 
+export async function DELETE(
+req: Request,
+context: { params: Promise<{ id: string }> }
+) {
+try {
+  const { id } = await context.params
+  await prisma.event.delete({
+   where: {id}
+  })
+ 
+  return NextResponse.json({ message: "Event deleted" })
+ 
+} catch (error) {
+  return NextResponse.json({ error: "Delete failed" }, { status: 500 })
+}
+}

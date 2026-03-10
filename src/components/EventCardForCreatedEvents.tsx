@@ -1,4 +1,5 @@
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 interface EventCardProps {
   event: {
@@ -9,10 +10,30 @@ interface EventCardProps {
     eventDate?: string;
     type?: "PUBLIC" | "PRIVATE";
     isPrivate?: boolean;
+    privateCode:string
   };
 }
 
+
 export default function EventCard({ event }: EventCardProps) {
+
+  const copyCode = () => {
+    toast.success("Private Code Copied Sucessfully")
+    navigator.clipboard.writeText(event.privateCode)
+  }
+ 
+  const handleDelete = async () => {
+      const res = await fetch(`/api/events/${event.id}`, {
+      method: "DELETE"
+  })
+  if (res.ok) {
+    toast.success("Deleted Successful")
+    setTimeout(()=>{
+        window.location.reload()
+    },1000)
+  }
+}
+ 
   const formattedDate = event.eventDate
     ? new Date(event.eventDate).toLocaleDateString("en-IN", {
         day: "2-digit",
@@ -69,6 +90,21 @@ export default function EventCard({ event }: EventCardProps) {
             "Explore event details, venue information, and registration access in one place."}
         </p>
 
+        {event.isPrivate && (
+          <div className="flex items-center gap-2 mt-2 text-sm">
+            <span className="text-gray-600">
+              Private Code:
+              <span className="font-semibold ml-1">{event.privateCode}</span>
+            </span>
+            <button
+            onClick={copyCode}
+            className="text-blue-600 text-xs hover:underline">
+              Copy
+            </button>
+          </div>
+        )}
+ 
+
         {/* Meta */}
         <div className="mt-4 space-y-2.5">
           <div className="flex items-center gap-3 rounded-2xl border border-[#e6eefb] bg-[#f8fbff] px-4 py-3">
@@ -113,6 +149,15 @@ export default function EventCard({ event }: EventCardProps) {
           </span>
         </Link>
       </div>
+      <div className="mt-3 flex justify-start">
+  <button
+    onClick={handleDelete}
+    className="inline-block  bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+  >
+    Delete
+  </button>
+</div>
+ 
     </div>
   );
 }

@@ -4,6 +4,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { eventSchema } from "@/lib/zod/eventSchema";
+import z from "zod";
 
 export default function CreateEvent() {
   const router = useRouter();
@@ -17,25 +20,84 @@ export default function CreateEvent() {
     eventDate: "",
   });
 
-  async function handleSubmit(e: any) {
-    e.preventDefault();
 
+
+  function showPrivateCodeToast(code: string) {
+  toast.custom((t) => (
+    <div className="bg-white shadow-lg rounded-lg p-4 flex items-center gap-3 border">
+      <div className="flex flex-col">
+        <span className="font-semibold text-sm text-gray-700">
+          Private Code
+        </span>
+        <span className="text-blue-600 font-mono text-sm">{code}</span>
+      </div>
+
+      <button
+        onClick={() => {
+          navigator.clipboard.writeText(code)
+
+          toast.success("Code copied!")
+
+          toast.dismiss(t.id)
+
+          setTimeout(() => {
+            router.push("/events")
+          }, 1000)   
+        }}
+        className="ml-3 px-3 py-1 text-sm bg-blue-600 text-white rounded"
+      >
+        Copy
+      </button>
+    </div>
+  ), {
+    duration: Infinity,
+  })
+}
+  async function handleSubmit(e: any) {
+  e.preventDefault()
+  const result = eventSchema.safeParse(form)
+
+  if (!result.success){
+    const error = z.treeifyError(result.error)
+    toast.success("Please Enter Valid Details")
+    return
+  }
+
+  try {
     const res = await fetch("/api/organizer/create", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(form),
-    });
+      body: JSON.stringify(result.data),
+    })
 
-    const data = await res.json();
+    const data = await res.json()
 
-    if (data.privateCode) {
-      alert("Private Code: " + data.privateCode);
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to create event")
     }
 
-    router.push("/events");
+    // Step 1: Show success
+    toast.success("Event Created Successfully")
+
+    // Step 2: Show private code after delay
+    if (data.privateCode) {
+      setTimeout(() => {
+        showPrivateCodeToast(data.privateCode)
+      }, 1200)
+    } else {
+      
+      setTimeout(() => {
+        router.push("/events")
+      }, 1500)
+    }
+
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error.message || "Something went wrong")
   }
+}
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center bg-gray-50 py-12">
