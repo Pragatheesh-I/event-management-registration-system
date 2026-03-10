@@ -5,7 +5,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-
+import { eventSchema } from "@/lib/zod/eventSchema";
+import z from "zod";
 
 export default function CreateEvent() {
   const router = useRouter();
@@ -18,6 +19,9 @@ export default function CreateEvent() {
     location: "",
     eventDate: "",
   });
+
+
+
   function showPrivateCodeToast(code: string) {
   toast.custom((t) => (
     <div className="bg-white shadow-lg rounded-lg p-4 flex items-center gap-3 border">
@@ -51,6 +55,13 @@ export default function CreateEvent() {
 }
   async function handleSubmit(e: any) {
   e.preventDefault()
+  const result = eventSchema.safeParse(form)
+
+  if (!result.success){
+    const error = z.treeifyError(result.error)
+    toast.success("Please Enter Valid Details")
+    return
+  }
 
   try {
     const res = await fetch("/api/organizer/create", {
@@ -58,7 +69,7 @@ export default function CreateEvent() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(form),
+      body: JSON.stringify(result.data),
     })
 
     const data = await res.json()
