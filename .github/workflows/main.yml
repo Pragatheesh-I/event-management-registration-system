@@ -38,6 +38,15 @@ jobs:
           username: ${{ secrets.VM_USER }}
           password: ${{ secrets.VM_PASSWORD }}
           script: |
+            cd /home/testadmin
+            if [ -d event-management-registration-system ]; then
+              cd event-management-registration-system
+              git pull
+            else
+              git clone https://github.com/Pragatheesh-I/event-management-registration-system.git
+              cd event-management-registration-system
+            fi
+          
             docker login ${{ secrets.ACR_LOGINSERVER }} -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
             docker-compose pull
             docker-compose up -d --remove-orphans
