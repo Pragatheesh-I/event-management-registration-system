@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
-import {z} from "zod"
 import { loginSchema } from "@/lib/zod/loginSchema"
 interface formData {
     email: string;
