@@ -7,7 +7,9 @@ export default function Home() {
         </h1>
  
         <p className="mt-6 text-[#6b82a8] text-lg leading-8">
-          Create events, join events. Track attendance.
+
+          Create events,Join events. Track attendance.
+
           <br />
           Simple. Private. Powerful.
         </p>
