@@ -1,23 +1,45 @@
-# Dockerfile for Next.js application with Prisma
-FROM node:22-alpine
+# ---------- 1️⃣ Dependencies ----------
+FROM node:22-alpine AS deps
 
-# Install necessary packages for Prisma and Next.js
-RUN apk add --no-cache openssl libc6-compat
-
-# Set the working directory
 WORKDIR /app
 
-# Install dependencies
+RUN apk add --no-cache libc6-compat openssl
+
 COPY package*.json ./
+
 RUN npm ci
 
-# Copy the rest of the application code
+# ---------- 2️⃣ Builder ----------
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+ENV JWT_SECRET=build-placeholder
+
+RUN apk add --no-cache libc6-compat openssl
+
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Expose Next.js default port
+RUN npx prisma generate
+RUN npm run build
+
+# ---------- 3️⃣ Production ----------
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+RUN apk add --no-cache libc6-compat openssl
+
+# Copy only production files
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/prisma ./prisma
+
 EXPOSE 3000
 
-# Run Prisma migrations and start the Next.js development server
-CMD ["sh", "-c", "npx prisma generate && npx prisma db push && npm run dev"]
-
-
+CMD ["npm","start"]

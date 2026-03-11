@@ -4,7 +4,6 @@ package_update: true
 
 packages:
   - docker.io
-  - docker-compose
   - curl
   - apt-transport-https
   - ca-certificates
@@ -13,15 +12,18 @@ packages:
 
 runcmd:
 
-  # Enable docker
+  # Start and enable Docker
   - systemctl start docker
   - systemctl enable docker
 
-  # Add user to docker group
+  # Allow azureuser to run docker
   - usermod -aG docker azureuser
 
   # Install Azure CLI
   - curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
-  # Run postgres container
-  - sudo volume create postgres_data
+  # Create persistent volume for postgres
+  - docker volume create postgres_data
+
+  # Run PostgreSQL container
+  - docker run -d --name postgres-db --restart always -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=password -e POSTGRES_DB=appdb -p 5432:5432 -v postgres_data:/var/lib/postgresql/data postgres:15
