@@ -12,7 +12,7 @@ ENV JWT_SECRET=build-placeholder
 RUN apk add --no-cache libc6-compat openssl
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npx prisma generate --schema./prisma/schema.prisma
+RUN npx prisma generate 
 RUN npm run build
 
 # ---------- 3️⃣ Production ----------
@@ -33,4 +33,5 @@ COPY --from=builder /app/bootstrap.js ./
 
 EXPOSE 3000
 CMD ["node", "bootstrap.js"]
+
 
