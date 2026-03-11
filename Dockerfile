@@ -1,26 +1,17 @@
 # ---------- 1️⃣ Dependencies ----------
 FROM node:22-alpine AS deps
-
 WORKDIR /app
-
 RUN apk add --no-cache libc6-compat openssl
-
 COPY package*.json ./
-
 RUN npm ci
 
 # ---------- 2️⃣ Builder ----------
 FROM node:22-alpine AS builder
-
 WORKDIR /app
-
 ENV JWT_SECRET=build-placeholder
-
 RUN apk add --no-cache libc6-compat openssl
-
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
 RUN npx prisma generate
 RUN npm run build
 
@@ -35,13 +26,8 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/src ./src        # <--- ADD THIS
+COPY --from=builder /app/src/lib/loadSecrets.js ./src/lib/loadSecrets.js
 COPY --from=builder /app/bootstrap.js ./
 
 EXPOSE 3000
 CMD ["node", "bootstrap.js"]
-
-
-
-
-
