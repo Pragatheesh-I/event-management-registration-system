@@ -26,24 +26,21 @@ RUN npm run build
 
 # ---------- 3️⃣ Production ----------
 FROM node:22-alpine AS runner
-
 WORKDIR /app
-
 ENV NODE_ENV=production
-
 RUN apk add --no-cache libc6-compat openssl
 
-# Copy only production files
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/src ./src        # <--- ADD THIS
 COPY --from=builder /app/bootstrap.js ./
 
 EXPOSE 3000
-
 CMD ["node", "bootstrap.js"]
+
 
 
 
