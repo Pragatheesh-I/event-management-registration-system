@@ -11,7 +11,8 @@ export default defineConfig({
     seed: "node --require dotenv/config prisma/seed.ts",
   },
   datasource: {
-    url: await getSecret("DATABASE-URL")
+    url: process.env.DATABASE_URL,
   },
 
 });
+
