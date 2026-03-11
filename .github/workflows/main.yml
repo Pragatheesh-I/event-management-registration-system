@@ -2,7 +2,7 @@ name: CD - Build and Push to ACR
  
 on:
   push:
-    branches: ["main"]
+    branches: ["feature/organiser-analytics"]
   workflow_dispatch:
  
 jobs:
