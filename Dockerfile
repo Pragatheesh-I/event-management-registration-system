@@ -1,35 +1,21 @@
-# ---------- 1️⃣ Dependencies ----------
-FROM node:22-alpine AS deps
+# Dockerfile for Next.js application with Prisma
+FROM node:22-alpine
+
+# Install necessary packages for Prisma and Next.js
+RUN apk add --no-cache openssl libc6-compat
+
+# Set the working directory
 WORKDIR /app
-RUN apk add --no-cache libc6-compat openssl
+
+# Install dependencies
 COPY package*.json ./
 RUN npm ci
 
-# ---------- 2️⃣ Builder ----------
-FROM node:22-alpine AS builder
-WORKDIR /app
-ENV JWT_SECRET=build-placeholder
-RUN apk add --no-cache libc6-compat openssl
-COPY --from=deps /app/node_modules ./node_modules
+# Copy the rest of the application code
 COPY . .
-RUN npx prisma generate
-RUN npm run build
 
-# ---------- 3️⃣ Production ----------
-FROM node:22-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-RUN apk add --no-cache libc6-compat openssl
-
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
-COPY --from=builder /app/src/lib/loadSecrets.js ./src/lib/loadSecrets.js
-COPY --from=builder /app/bootstrap.js ./
-
-
+# Expose Next.js default port
 EXPOSE 3000
-CMD ["node", "bootstrap.js"]
+
+# Run Prisma migrations and start the Next.js development server
+CMD ["sh", "-c", "npx prisma generate && npx prisma db push && npm run dev"]
