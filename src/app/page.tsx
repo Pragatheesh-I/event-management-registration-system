@@ -13,10 +13,7 @@ export default function Home() {
         </p>
  
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a
-            href="/events"
-            className="bg-[#0a3cff] text-white px-6 py-3 rounded-xl font-semibold shadow-sm hover:bg-blue-700 transition"
-          >
+          <a href="/events" className="bg-[#0a3cff] text-white px-6 py-3 rounded-xl font-semibold shadow-sm hover:bg-blue-700 transition">
             Explore Events
           </a>
  

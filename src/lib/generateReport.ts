@@ -94,7 +94,7 @@ export function generatePDFReport(events: EventRow[], filterLabel: string) {
   });
 
   // Step 4: Overall Attendance Status table
-  // @ts-ignore — jspdf-autotable attaches lastAutoTable to doc at runtime
+  // @ts-expect-error — jspdf-autotable attaches lastAutoTable to doc at runtime
   y = doc.lastAutoTable.finalY + 14;
 
   doc.setFontSize(11);
@@ -138,7 +138,7 @@ export function generatePDFReport(events: EventRow[], filterLabel: string) {
   });
 
   // Step 5: Per-event attendance table
-  // @ts-ignore
+  // @ts-expect-error — jspdf-autotable attaches lastAutoTable to doc at runtime
   y = doc.lastAutoTable.finalY + 14;
 
   if (y > 230) {
