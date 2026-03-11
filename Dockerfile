@@ -32,4 +32,5 @@ COPY --from=builder /app/bootstrap.js ./
 
 
 EXPOSE 3000
-CMD ["node", "bootstrap.js"]]
+CMD ["node", "bootstrap.js"]
+
