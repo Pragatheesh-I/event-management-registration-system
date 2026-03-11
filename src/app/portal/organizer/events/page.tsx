@@ -3,9 +3,22 @@
 import { useEffect, useState } from "react"
 import EventCardForCreatedEvents from "@/components/EventCardForCreatedEvents"
 import Link from "next/link"
-
+interface Event  {
+        id: string,
+        title: string,
+        description: string,
+        type: "PUBLIC" | "PRIVATE",
+        isPrivate: boolean,
+        privateCode: string,
+        createdBy: string,
+        location: string,
+        eventDate: string,
+        createdAt: string,
+        updatedAt: string,
+        organizerId: string
+  }
 export default function MyEvents() {
-  const [events, setEvents] = useState<any[]>([])
+  const [events, setEvents] = useState<Event[]>([])
  
   useEffect(() => {
     fetch("/api/organizer/CreatedEvents")

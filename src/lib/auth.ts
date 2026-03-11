@@ -1,19 +1,23 @@
-import jwt from "jsonwebtoken";
-
-function getJwtSecret() {
-  const secret = process.env.JWT_SECRET;
-
-  if (!secret) {
-    throw new Error("JWT_SECRET is not defined");
-  }
-
-  return secret;
+import { SignJWT, jwtVerify } from "jose"
+ 
+const secretKey = process.env.JWT_SECRET!
+ 
+if (!secretKey) {
+  throw new Error("JWT_SECRET is not defined")
 }
-
-export function signToken(payload: any) {
-  return jwt.sign(payload, getJwtSecret(), { expiresIn: "1d" });
+ 
+const secret = new TextEncoder().encode(secretKey)
+ 
+// ✅ Sign Token
+export async function signToken(payload: any) {
+  return await new SignJWT(payload)
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime("7d")
+    .sign(secret)
 }
-
-export function verifyToken(token: string) {
-  return jwt.verify(token, getJwtSecret());
+ 
+// ✅ Verify Token
+export async function verifyToken(token: string) {
+  const { payload } = await jwtVerify(token, secret)
+  return payload
 }

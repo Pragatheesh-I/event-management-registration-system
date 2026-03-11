@@ -5,9 +5,13 @@ import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 import {z} from "zod"
 import { loginSchema } from "@/lib/zod/loginSchema"
+interface formData {
+    email: string;
+    password: string;
+}
 
 export default function LoginPage() {
-  const [form, setForm] = useState({ email: "", password: "" })
+  const [form, setForm] = useState<formData>({ email: "", password: "" })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
@@ -24,7 +28,7 @@ export default function LoginPage() {
     }else{
    
     try {
-      const res = await fetch("/api/auth/login", {
+      const res: Response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

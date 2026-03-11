@@ -1,5 +1,5 @@
 "use client";
- 
+
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
@@ -15,7 +15,7 @@ import {
   CartesianGrid,
 } from "recharts";
  
-const COLORS: any = {
+const COLORS: { [key: string]: string } = {
   PRESENT: "#22c55e",
   ABSENT: "#ef4444",
   NOT_MARKED: "#64748b",

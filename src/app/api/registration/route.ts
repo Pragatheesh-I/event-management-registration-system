@@ -2,6 +2,8 @@
 import prisma from "@/lib/prisma"
 import { getUserFromRequest } from "@/lib/getUserFromRequest"
 import { NextResponse } from "next/server"
+import { $Enums } from "@/generated/prisma/client";
+ 
 export async function GET(req: any) {
   const user: any = await getUserFromRequest(req)
 
