@@ -1,16 +1,16 @@
 //  this is Event Creation Page by Organizer
 // Home Page for Organizer Portal
 "use client";
-
+ 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { eventSchema } from "@/lib/zod/eventSchema";
-
+ 
 export default function CreateEvent() {
   const router = useRouter();
   const now = new Date().toISOString().slice(0, 16);
-
+ 
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -19,9 +19,9 @@ export default function CreateEvent() {
     location: "",
     eventDate: "",
   });
-
+ 
   const [errors, setErrors] = useState<Record<string, string>>({});
-
+ 
   function showPrivateCodeToast(code: string) {
     toast.custom(
       (t) => (
@@ -32,15 +32,15 @@ export default function CreateEvent() {
             </span>
             <span className="text-blue-600 font-mono text-sm">{code}</span>
           </div>
-
+ 
           <button
             onClick={() => {
               navigator.clipboard.writeText(code);
-
+ 
               toast.success("Code copied!");
-
+ 
               toast.dismiss(t.id);
-
+ 
               setTimeout(() => {
                 router.push("/events");
               }, 1000);
@@ -59,7 +59,7 @@ export default function CreateEvent() {
   async function handleSubmit(e: any) {
     e.preventDefault();
     const result = eventSchema.safeParse(form);
-
+ 
     if (!result.success) {
       const newErrors: Record<string, string> = {};
       result.error.issues.forEach((err) => {
@@ -69,9 +69,9 @@ export default function CreateEvent() {
       setErrors(newErrors);
       return;
     }
-
+ 
     setErrors({});
-
+ 
     try {
       const res = await fetch("/api/organizer/create", {
         method: "POST",
@@ -80,16 +80,16 @@ export default function CreateEvent() {
         },
         body: JSON.stringify(result.data),
       });
-
+ 
       const data = await res.json();
-
+ 
       if (!res.ok) {
         throw new Error(data.message || "Failed to create event");
       }
-
+ 
       // Step 1: Show success
       toast.success("Event Created Successfully");
-
+ 
       // Step 2: Show private code after delay
       if (data.privateCode) {
         setTimeout(() => {
@@ -105,14 +105,14 @@ export default function CreateEvent() {
       toast.error(error.message || "Something went wrong");
     }
   }
-
+ 
   return (
     <div className="min-h-[80vh] flex items-center justify-center bg-gray-50 py-12">
       <div className="w-full max-w-2xl bg-white border border-gray-200 p-8 rounded-lg shadow-sm">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">
           Create New Event
         </h2>
-
+ 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Title */}
           <div>
@@ -131,7 +131,7 @@ export default function CreateEvent() {
               <p className="text-red-500 text-sm mt-1">{errors.title}</p>
             )}
           </div>
-
+ 
           {/* Description */}
           <div>
             <label className="block text-gray-600 mb-2 text-sm">
@@ -152,13 +152,13 @@ export default function CreateEvent() {
               <p className="text-red-500 text-sm mt-1">{errors.description}</p>
             )}
           </div>
-
+ 
           {/* Event Type */}
           <div>
             <label className="block text-slate-400 mb-2 text-sm">
               Event Type
             </label>
-
+ 
             <select
               className={`w-full bg-gray-50 border px-4 py-2 rounded-md ${
                 errors.type ? "border-red-500" : "border-gray-200"
@@ -209,7 +209,7 @@ export default function CreateEvent() {
               <p className="text-red-500 text-sm mt-1">{errors.eventDate}</p>
             )}
           </div>
-
+ 
           <button className="w-full py-3 px-4 bg-blue-600 text-white rounded-md font-semibold">
             Create Event
           </button>
