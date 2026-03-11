@@ -1,4 +1,5 @@
 import { loadSecrets } from "./src/lib/loadSecrets.js"
+import { execSync } from "child_process"
 
 async function start() {
   await loadSecrets()
